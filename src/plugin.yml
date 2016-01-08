@@ -1,0 +1,6 @@
+name: KevsPermissions
+version: 1.0d
+main: kev575.permissions.KevsPermissions
+commands:
+  kevspermissions:
+    aliases: [kp]

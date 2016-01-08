@@ -1,0 +1,6 @@
+bin/config.yml
+*.class
+*.project
+.classpath
+bin/plugin.yml
+*.prefs
