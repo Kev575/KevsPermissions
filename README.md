@@ -8,3 +8,5 @@ Commands:
   
 Permissions:  
 Simply the kp.subcommand; example: kp.help or kp.setgroup  
+  
+**SpigotMC Ressource:** https://www.spigotmc.org/resources/kevspermissions.16549/  
