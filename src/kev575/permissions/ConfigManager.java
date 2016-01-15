@@ -75,14 +75,20 @@ public class ConfigManager {
 		plugin.saveConfig();
 	}
 	
-	public PlayerGroup getPlayersGroup(UUID id) {
-		if (players.isString(id + ".global.group")) {
+	public List<PlayerGroup> getPlayersGroup(UUID id) {
+		List<PlayerGroup> groups = new ArrayList<>();
+		if (players.isList(id + ".global.group")) {
 			if (players.isString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")) {
-				return new PlayerGroup(players.getString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group"));
+				groups.add(new PlayerGroup(players.getString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")));
+				return groups;
 			}
-			return new PlayerGroup(players.getString(id + ".global.group"));
+			for (String str : cfg.getStringList(id.toString() + ".global.group")) {
+				groups.add(new PlayerGroup(str));
+			}
+			return groups;
 		} else {
-			return new PlayerGroup("default");
+			groups.add(new PlayerGroup("default"));
+			return groups;
 		}
 	}
 	

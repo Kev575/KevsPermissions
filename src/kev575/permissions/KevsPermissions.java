@@ -27,7 +27,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	public static ConfigManager config;
 	public String pre;
 	
-	HashMap<UUID,PermissionAttachment> atts = new HashMap<UUID,PermissionAttachment>();
+	HashMap<UUID, PermissionAttachment> atts = new HashMap<UUID,PermissionAttachment>();
 	
 	@Override
 	public void onEnable() {
@@ -135,6 +135,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						}
 					} catch (Exception e) {}
 					config.getGroups().set(args[1] + ".prefix", "your new prefix");
+					config.getGroups().set(args[1] + ".suffix", "your new suffix");
 					List<String> permissions = new ArrayList<>();
 					permissions.add("your.new.permission");
 					config.getGroups().set(args[1] + ".permissions", permissions);
@@ -187,15 +188,41 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				config.saveGroups();
 				se.sendMessage(pre + "Prefix of " + args[1] + " changed to " + s);
 				return true;
+			} else if (args.length>=3 && args[0].equalsIgnoreCase("setsuffix")) {
+				if (!se.hasPermission("kp.setsuffix")) {
+					se.sendMessage(noPerm());
+					return true;
+				}
+				if (config.getGroup(args[1]) == null) {
+					se.sendMessage(pre + "The group \"" + args[1] + "\" doesn't exist. :(");
+					return true;
+				}
+				String s = "";
+				for (int i = 2; i < args.length; i++) {
+					s += args[i] + " ";
+				}
+				s = s.substring(0, s.length()-1);
+				config.getGroups().set(args[1] + ".suffix", s);
+				config.saveGroups();
+				se.sendMessage(pre + "Suffix of " + args[1] + " changed to " + s);
+				return true;
 			} else if (args.length == 3) {
 				if (args[0].equalsIgnoreCase("setgroup")) {
 					if (!se.hasPermission("kp.setgroup")) {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					config.getPlayers().set(Bukkit.getOfflinePlayer(args[1]).getUniqueId() + ".global.group", args[2]);
+					
+					List<String> groups = config.getPlayers().getStringList(Bukkit.getOfflinePlayer(args[1]).getUniqueId() + ".global.group");
+					if (groups.contains(args[2])) {
+						se.sendMessage(pre + "Removed group " + args[2] + " from " + args[1]);
+						groups.remove(args[2]);
+					} else {
+						se.sendMessage(pre + "Added group " + args[2] + " to " + args[1]);
+						groups.add(args[2]);
+					}
+					config.getPlayers().set(Bukkit.getOfflinePlayer(args[1]).getUniqueId() + ".global.group", groups);
 					config.savePlayers();
-					se.sendMessage(pre + "Group of " + args[1] + " changed to " + config.getPlayersGroup(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).getName());
 					if (Bukkit.getOfflinePlayer(args[1]).isOnline()) {
 						onJoin(new PlayerJoinEvent(Bukkit.getPlayer(args[1]), ""));
 					}
@@ -215,9 +242,10 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					config.getGroups().set(args[1] + ".permissions", s);
 					config.saveGroups();
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						PlayerGroup pg = config.getPlayersGroup(p.getUniqueId());
-						if (pg.getName().equalsIgnoreCase(args[0])) {
-							onJoin(new PlayerJoinEvent(p, ""));
+						for (PlayerGroup gru : config.getPlayersGroup(p.getUniqueId())) {
+							if (gru.getName().equalsIgnoreCase(args[0])) {
+								onJoin(new PlayerJoinEvent(p, ""));
+							}
 						}
 					}
 				} else {
@@ -253,12 +281,13 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 			disablePermission(atts.get(e.getPlayer().getUniqueId()));
 			atts.remove(e.getPlayer().getUniqueId());
 		}
-		PlayerGroup group = config.getPlayersGroup(e.getPlayer().getUniqueId());
-		PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
-		for (String perm : group.getPermissions()) {
-			at.setPermission(perm, true);
+		for (PlayerGroup group : config.getPlayersGroup(e.getPlayer().getUniqueId())) {
+			PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
+			for (String perm : group.getPermissions()) {
+				at.setPermission(perm, true);
+			}
+			atts.put(e.getPlayer().getUniqueId(), at);
 		}
-		atts.put(e.getPlayer().getUniqueId(), at);
 	}
 	
 	@EventHandler
