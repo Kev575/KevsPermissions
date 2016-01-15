@@ -8,7 +8,7 @@ public class PlayerGroup {
 	
 	private String name;
 
-	private String prefix;
+	private String prefix, suffix;
 	
 	public PlayerGroup(String name) {
 		if (!KevsPermissions.config.getGroups().contains(name)) {
@@ -17,6 +17,9 @@ public class PlayerGroup {
 		this.name = name;
 		permissions = KevsPermissions.config.getGroups().getStringList(name + ".permissions");
 		prefix = KevsPermissions.config.getGroups().getString(name + ".prefix");
+		suffix = KevsPermissions.config.getGroups().getString(name + ".suffix");
+		if (prefix == null) prefix = "";
+		if (suffix == null) suffix = "";
 	}
 	
 	public String getName() {
@@ -29,6 +32,10 @@ public class PlayerGroup {
 	
 	public String getPrefix() {
 		return prefix;
+	}
+	
+	public String getSuffix() {
+		return suffix;
 	}
 	
 }
