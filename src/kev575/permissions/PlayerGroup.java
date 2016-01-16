@@ -12,7 +12,7 @@ public class PlayerGroup {
 	
 	public PlayerGroup(String name) {
 		if (!KevsPermissions.config.getGroups().contains(name)) {
-			name = "default";
+			name = KevsPermissions.config.getCfg().getString("default");
 		}
 		this.name = name;
 		permissions = KevsPermissions.config.getGroups().getStringList(name + ".permissions");

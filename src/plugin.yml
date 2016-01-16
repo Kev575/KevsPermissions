@@ -1,5 +1,5 @@
 name: KevsPermissions
-version: 1.2b
+version: 1.2c
 main: kev575.permissions.KevsPermissions
 commands:
   kevspermissions:

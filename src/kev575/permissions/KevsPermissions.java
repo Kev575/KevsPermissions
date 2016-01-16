@@ -70,7 +70,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				l.add("setperm");
 				l.add("addsub");
 				l.add("listgroup");
-				l.add("groupinfo");
+				l.add("getgroup");
 			} else if (args.length == 2) {
 				if (args[0].equalsIgnoreCase("setgroup")) {
 					for (Player p : Bukkit.getOnlinePlayers()) {
@@ -84,7 +84,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						l.add(p.getName());
 					}
-				} else if (args[0].equalsIgnoreCase("removegroup") || args[0].equalsIgnoreCase("addsub") || args[0].equalsIgnoreCase("getgroup") || args[0].equalsIgnoreCase("groupinfo")) {
+				} else if (args[0].equalsIgnoreCase("removegroup") || args[0].equalsIgnoreCase("addsub") || args[0].equalsIgnoreCase("getgroup")) {
 					l.addAll(config.getGroups().getValues(false).keySet());
 				} else if (args[0].equalsIgnoreCase("setprefix") || args[0].equalsIgnoreCase("setsuffix")) {
 					l.addAll(config.getGroups().getValues(false).keySet());
@@ -210,6 +210,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						return true;
 					}
 					se.sendMessage(pre + "§3Group(s) of " + args[1] + ":");
+					se.sendMessage("" + config.getPlayersGroup(Bukkit.getOfflinePlayer(args[1]).getUniqueId()));
 					for (PlayerGroup group : config.getPlayersGroup(Bukkit.getOfflinePlayer(args[1]).getUniqueId())) {
 						if (group != null) {
 							se.sendMessage("  §eGroup§8: §7" + group.getName());
@@ -260,6 +261,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				if (args[0].equalsIgnoreCase("setgroup")) {
 					if (!se.hasPermission("kp.setgroup")) {
 						se.sendMessage(noPerm());
+						return true;
+					}
+					
+					if (config.getGroup(args[2]) == null) {
+						se.sendMessage(pre + "The group \"" + args[2] + "\" doesn't exist. :(");
 						return true;
 					}
 					
@@ -357,13 +363,15 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 			disablePermission(atts.get(e.getPlayer().getUniqueId()));
 			atts.remove(e.getPlayer().getUniqueId());
 		}
+		PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
 		for (PlayerGroup group : config.getPlayersGroup(e.getPlayer().getUniqueId())) {
-			PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
-			for (String perm : group.getPermissions()) {
-				at.setPermission(perm, true);
+			if (group != null) {
+				for (String perm : group.getPermissions()) {
+					at.setPermission(perm, true);
+				}
 			}
-			atts.put(e.getPlayer().getUniqueId(), at);
 		}
+		atts.put(e.getPlayer().getUniqueId(), at);
 	}
 	
 	@EventHandler

@@ -24,10 +24,10 @@ public class ConfigManager {
 		if (!config.exists()) {
 			try {
 				config.createNewFile();
-				getGroups().set("default.prefix", "your new prefix");
+				getGroups().set(getDefaultGroup() + ".prefix", "your new prefix");
 				List<String> permissions = new ArrayList<>();
 				permissions.add("your.new.permission");
-				getGroups().set("default.permissions", permissions);
+				getGroups().set(getDefaultGroup() + ".permissions", permissions);
 				saveGroups();
 			} catch (IOException e) {
 				System.out.println("Can't create File groups.yml");
@@ -71,30 +71,37 @@ public class ConfigManager {
 		}
 	}
 	
+	public PlayerGroup getDefaultGroup() {
+		return getGroup(cfg.getString("default"));
+	}
+	
 	public void saveConfig() {
 		plugin.saveConfig();
 	}
 	
 	public List<PlayerGroup> getPlayersGroup(UUID id) {
-		List<PlayerGroup> groups = new ArrayList<>();
-		if (players.isList(id + ".global.group")) {
-			if (players.isString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")) {
+		List<PlayerGroup> groups = new ArrayList<PlayerGroup>();
+		if (getPlayers().isList(id + ".global.group")) {
+			/*if (players.isString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")) {
 				groups.add(new PlayerGroup(players.getString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")));
 				return groups;
-			}
-			for (String str : cfg.getStringList(id.toString() + ".global.group")) {
+			}*/
+			for (String str : getPlayers().getStringList(id + ".global.group")) {
 				groups.add(new PlayerGroup(str));
+			}
+			if (groups.size() == 0) {
+				groups.add(getDefaultGroup());
 			}
 			return groups;
 		} else {
-			groups.add(new PlayerGroup("default"));
+			groups.add(getDefaultGroup());
 			return groups;
 		}
 	}
 	
 	public PlayerGroup getGroup(String group) {
 		if (!KevsPermissions.config.getGroups().contains(group)) {
-			return new PlayerGroup("default");
+			return null;
 		}
 		return new PlayerGroup(group);
 	}
