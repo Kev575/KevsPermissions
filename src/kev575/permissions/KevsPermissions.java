@@ -1,6 +1,8 @@
 package kev575.permissions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +23,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.util.StringUtil;
 
 public class KevsPermissions extends JavaPlugin implements Listener {
 
@@ -33,9 +39,36 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	public void onEnable() {
 		pre = "§8[§6KevsPermissions§8]§7 ";
 		config = new ConfigManager(this);
+		pre = config.getCfg().isString("prefix") ? config.getCfg().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
 		for (Player p : Bukkit.getOnlinePlayers()) {
 			onJoin(new PlayerJoinEvent(p, ""));
+		}
+		if (config.getCfg().isBoolean("enablemanagers") && config.getCfg().isBoolean("scoreboardmanager")) {
+			if (config.getCfg().getBoolean("enablemanagers")) {
+				Bukkit.getPluginManager().registerEvents(new ChatManager(), this);
+				if (config.getCfg().getBoolean("scoreboardmanager"))
+				Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+					ScoreboardManager man = Bukkit.getScoreboardManager();
+					Scoreboard sb = man.getMainScoreboard();
+					@SuppressWarnings("deprecation")
+					public void run() {
+						for (PlayerGroup gr : config.getAllGroups()) {
+							Team current;
+							if (sb.getTeam(gr.getName()) == null)
+								current = sb.registerNewTeam(gr.getName());
+							else
+								current = sb.getTeam(gr.getName());
+							current.setPrefix(gr.getPrefix().replace("&", "§"));
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								if (config.getPlayersGroup(p.getUniqueId()).get(0).getName().equals(gr.getName())) {
+									current.addPlayer(p);
+								}
+							}
+						}
+					}
+				}, 20, 20);
+			}
 		}
 	}
 	
@@ -55,22 +88,19 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
+	private static final String[] COMMANDS = { "help", "setgroup", "setwgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "addsub", "listgroup", "getgroup" };
+	
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
 		ArrayList<String> l = new ArrayList<>();
 		if (cmd.getName().equalsIgnoreCase("kevspermissions")) {
+			List<String> completions = new ArrayList<String>();
 			if (args.length == 1) {
-				l.add("help");
-				l.add("setgroup");
-				l.add("setwgroup");
-				l.add("setsuffix");
-				l.add("creategroup");
-				l.add("removegroup");
-				l.add("setprefix");
-				l.add("setperm");
-				l.add("addsub");
-				l.add("listgroup");
-				l.add("getgroup");
+				String partialCommand = args[0];
+				List<String> commands = new ArrayList<String>(Arrays.asList(COMMANDS));
+				StringUtil.copyPartialMatches(partialCommand, commands, completions);
+				Collections.sort(completions);
+				return completions;
 			} else if (args.length == 2) {
 				if (args[0].equalsIgnoreCase("setgroup")) {
 					for (Player p : Bukkit.getOnlinePlayers()) {

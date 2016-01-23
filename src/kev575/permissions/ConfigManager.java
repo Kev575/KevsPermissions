@@ -75,6 +75,14 @@ public class ConfigManager {
 		return getGroup(cfg.getString("default"));
 	}
 	
+	public ArrayList<PlayerGroup> getAllGroups() {
+		ArrayList<PlayerGroup> al = new ArrayList<>();
+		for (String str : getGroups().getValues(false).keySet()) {
+			al.add(new PlayerGroup(str));
+		}
+		return al;
+	}
+	
 	public void saveConfig() {
 		plugin.saveConfig();
 	}

@@ -1,3 +1,10 @@
 antibuild: false
 # default group
 default: default
+enablemanagers: false
+# %x: prefix; %s: suffix; %p: playername; %m: message;
+chatman: "&7%x%p&8: &7%m"
+# only activate if you do not need scoreboard teams (e.g. for minigames plugins)
+# (can only be undo using scoreboard commands)
+#  use this for the prefix in the tablist
+scoreboardmanager: false
