@@ -5,7 +5,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+
+import net.milkbowl.vault.chat.Chat;
+import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -21,7 +25,9 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerShearEntityEvent;
 import org.bukkit.permissions.PermissionAttachment;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
@@ -33,16 +39,29 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	public static ConfigManager config;
 	public String pre;
 	
+	public static Object vaultChat;
+	public static Object vaultPermission;
 	HashMap<UUID, PermissionAttachment> atts = new HashMap<UUID,PermissionAttachment>();
 	
 	@Override
 	public void onEnable() {
 		pre = "§8[§6KevsPermissions§8]§7 ";
+		saveDefaultConfig();
+	/* comes in some versions!
+	 * if (getConfig().get("mysql.enabled") != null) {
+			if (getConfig().getBoolean("mysql.enabled")) {
+				KevSQL sql = new KevSQL(getConfig().getString("mysql.host"), getConfig().getString("mysql.database"), getConfig().getInt("mysql.port"), getConfig().getString("mysql.username"), getConfig().getString("mysql.password"));
+				config = new ConfigManager(sql);
+			}
+		} else*/
 		config = new ConfigManager(this);
 		pre = config.getCfg().isString("prefix") ? config.getCfg().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
 		for (Player p : Bukkit.getOnlinePlayers()) {
 			onJoin(new PlayerJoinEvent(p, ""));
+		}
+		if (config.getCfg().isBoolean("enablemanagers") && config.getCfg().getBoolean("enablemanagers")) {
+			setupProvider();
 		}
 		if (config.getCfg().isBoolean("enablemanagers") && config.getCfg().isBoolean("scoreboardmanager")) {
 			if (config.getCfg().getBoolean("enablemanagers")) {
@@ -72,6 +91,22 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
+	private void setupProvider() {
+		if (getServer().getPluginManager().getPlugin("Vault") == null) {
+			return;
+		}
+		
+		try {
+			RegisteredServiceProvider<Chat> chatProvider = getServer().getServicesManager().getRegistration(Chat.class);
+	        if (chatProvider != null) {
+	            vaultChat = chatProvider.getProvider();
+	        }
+	        RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(Permission.class);
+	        if (permissionProvider != null)
+	        	vaultPermission = permissionProvider.getProvider();
+		} catch (Exception e) {}
+	}
+
 	@Override
 	public void onDisable() {
 		for (PermissionAttachment at : atts.values()) {
@@ -115,17 +150,37 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						l.add(p.getName());
 					}
 				} else if (args[0].equalsIgnoreCase("removegroup") || args[0].equalsIgnoreCase("addsub") || args[0].equalsIgnoreCase("getgroup")) {
-					l.addAll(config.getGroups().getValues(false).keySet());
+					String partialCommand = args[0];
+					Set<String> commands = config.getGroups().getValues(false).keySet();
+					StringUtil.copyPartialMatches(partialCommand, commands, completions);
+					Collections.sort(completions);
+					return completions;
 				} else if (args[0].equalsIgnoreCase("setprefix") || args[0].equalsIgnoreCase("setsuffix")) {
-					l.addAll(config.getGroups().getValues(false).keySet());
+					String partialCommand = args[0];
+					Set<String> commands = config.getGroups().getValues(false).keySet();
+					StringUtil.copyPartialMatches(partialCommand, commands, completions);
+					Collections.sort(completions);
+					return completions;
 				} else if (args[0].equalsIgnoreCase("setperm")) {
-					l.addAll(config.getGroups().getValues(false).keySet());
+					String partialCommand = args[0];
+					Set<String> commands = config.getGroups().getValues(false).keySet();
+					StringUtil.copyPartialMatches(partialCommand, commands, completions);
+					Collections.sort(completions);
+					return completions;
 				}
 			} else if (args.length == 3) {
 				if (args[0].equalsIgnoreCase("setgroup") || args[0].equalsIgnoreCase("addsub")) {
-					l.addAll(config.getGroups().getValues(false).keySet());
+					String partialCommand = args[0];
+					Set<String> commands = config.getGroups().getValues(false).keySet();
+					StringUtil.copyPartialMatches(partialCommand, commands, completions);
+					Collections.sort(completions);
+					return completions;
 				} else if (args[0].equalsIgnoreCase("setwgroup")) {
-					l.addAll(config.getGroups().getValues(false).keySet());
+					String partialCommand = args[0];
+					Set<String> commands = config.getGroups().getValues(false).keySet();
+					StringUtil.copyPartialMatches(partialCommand, commands, completions);
+					Collections.sort(completions);
+					return completions;
 				} else if (args[0].equalsIgnoreCase("setprefix")) {
 					l.add("<Prefix...>");
 				} else if (args[0].equalsIgnoreCase("setsuffix")) {
@@ -465,5 +520,20 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
+	@EventHandler
+	public void on(PlayerShearEntityEvent e) {
+		if (config.getCfg().getBoolean("antibuild")) {
+			if (!e.getPlayer().hasPermission("kp.antibuild"))
+				e.setCancelled(true);
+		}
+	}
+	
+	@EventHandler
+	public void on(PlayerJoinEvent e) {
+		if (config.getCfg().getBoolean("antibuild")) {
+			if (!e.getPlayer().hasPermission("kp.antibuild"))
+				e.getPlayer().sendMessage("§6KevsPermissions §8> §cYou currently lack the permission §7\"§akp.antibuild§7\"§c!");
+		}
+	}
 }
  

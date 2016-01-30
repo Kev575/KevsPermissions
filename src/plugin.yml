@@ -1,6 +1,7 @@
 name: KevsPermissions
-version: 1.2e
+version: 1.2g
 main: kev575.permissions.KevsPermissions
+description: A lightweight permissions plugin every serveradmin must have!
 commands:
   kevspermissions:
     aliases: [kp]

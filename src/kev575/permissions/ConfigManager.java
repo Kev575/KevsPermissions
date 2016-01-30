@@ -6,7 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import net.milkbowl.vault.chat.Chat;
+import net.milkbowl.vault.permission.Permission;
+
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -18,7 +23,6 @@ public class ConfigManager {
 	private FileConfiguration players;
 	public ConfigManager(KevsPermissions kevsPermissions) {
 		plugin = kevsPermissions;
-		plugin.saveDefaultConfig();
 		cfg = plugin.getConfig();
 		File config = new File(plugin.getDataFolder(), "groups.yml");
 		if (!config.exists()) {
@@ -59,6 +63,9 @@ public class ConfigManager {
 			System.out.println("Can't save File groups.yml");
 			e.printStackTrace();
 		}
+		
+		updateVaultPermissions();
+		updateVaultChat();
 	}
 	
 	public void savePlayers() {
@@ -69,8 +76,40 @@ public class ConfigManager {
 			System.out.println("Can't save File players.yml");
 			e.printStackTrace();
 		}
+		
+		updateVaultPermissions();
+		updateVaultChat();
 	}
 	
+	public void updateVaultChat() {
+		if (KevsPermissions.vaultChat == null)
+			return;
+		for (PlayerGroup g : getAllGroups()) {
+			((Chat) KevsPermissions.vaultChat).setGroupPrefix((World)null, g.getName(), g.getPrefix());
+			((Chat) KevsPermissions.vaultChat).setGroupSuffix((World)null, g.getName(), g.getSuffix());
+		}
+	}
+	
+	public void updateVaultPermissions() {
+		if (KevsPermissions.vaultPermission == null)
+			return;
+		for (OfflinePlayer of : Bukkit.getOfflinePlayers()) {
+			for (PlayerGroup g : getPlayersGroup(of.getUniqueId())) {
+				for (String perm : g.permissions)
+					((Permission) KevsPermissions.vaultPermission).playerRemove(null, of, perm);
+					((Permission) KevsPermissions.vaultPermission).playerRemoveGroup(null, of, g.getName());
+			}
+		}
+		for (OfflinePlayer of : Bukkit.getOfflinePlayers()) {
+			for (PlayerGroup g : getPlayersGroup(of.getUniqueId())) {
+				((Permission) KevsPermissions.vaultPermission).playerAddGroup(null, of, g.getName());
+				for (String perm : g.permissions) {
+					((Permission) KevsPermissions.vaultPermission).playerAdd(null, of, perm);
+				}
+			}
+		}
+	}
+
 	public PlayerGroup getDefaultGroup() {
 		return getGroup(cfg.getString("default"));
 	}

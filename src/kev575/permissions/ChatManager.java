@@ -9,6 +9,10 @@ public class ChatManager implements Listener {
 
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
+		
+		if (KevsPermissions.vaultChat != null)
+			return;
+		
 		if (KevsPermissions.config.getCfg().isBoolean("enablemanagers")) {
 			if (KevsPermissions.config.getCfg().getBoolean("enablemanagers")) {
 				if (e.getPlayer().hasPermission("kp.chatcolor")) {
