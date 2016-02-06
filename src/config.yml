@@ -1,6 +1,8 @@
 antibuild: false
 # default group
 default: default
+# prefix
+prefix: ""
 enablemanagers: false
 # %x: prefix; %s: suffix; %p: playername; %m: message;
 chatman: "&7%x%p&8: &7%m"

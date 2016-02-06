@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import kev575.obf.PluginSetInPerms;
+import kev575.obf.PluginSetOutConfig;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 
@@ -41,19 +43,37 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	
 	public static Object vaultChat;
 	public static Object vaultPermission;
-	HashMap<UUID, PermissionAttachment> atts = new HashMap<UUID,PermissionAttachment>();
+	HashMap<UUID, PermissionAttachment> atts = new HashMap<UUID, PermissionAttachment>();
+
+	public void disable() {
+		setEnabled(false);
+		return;
+	}
 	
 	@Override
 	public void onEnable() {
-		pre = "§8[§6KevsPermissions§8]§7 ";
+		//pre = "§8[§6KevsPermissions§8]§7 "; #OLD PREFIX xD
+		pre = "§6KevsPermission §8> §7";
 		saveDefaultConfig();
-	/* comes in some versions!
-	 * if (getConfig().get("mysql.enabled") != null) {
-			if (getConfig().getBoolean("mysql.enabled")) {
-				KevSQL sql = new KevSQL(getConfig().getString("mysql.host"), getConfig().getString("mysql.database"), getConfig().getInt("mysql.port"), getConfig().getString("mysql.username"), getConfig().getString("mysql.password"));
-				config = new ConfigManager(sql);
+		PluginSetInPerms.a();
+		PluginSetOutConfig.a(getConfig());
+		PluginSetOutConfig.b(this);
+		/*if (getConfig().get("allow-modules") != null && getConfig().getBoolean("allow-modules")) {
+			System.out.println("[KevsPermissions] Downloading Kev's ModuleManager!");
+			try {
+				File modulemanager = new File(getDataFolder(), "modulemanager.jar");
+				FileUtils.copyURLToFile(new URL("https://kev575.github.io/files/modulemanager.jar"), modulemanager);
+				Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().loadPlugin(modulemanager));
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println();
+				System.out.println("-- The KP Module \"modulemanager.jar\" could not be loaded! See the stacktrace above! :(");
+				System.out.println();
 			}
-		} else*/
+			
+		} else {
+			System.out.println("[KevsPermissions] Kev's Modules are disabled. You cannot use the really cool stuff! Change allow-modules in the config.yml to enable them :)");
+		}*/
 		config = new ConfigManager(this);
 		pre = config.getCfg().isString("prefix") ? config.getCfg().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
@@ -95,7 +115,6 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		if (getServer().getPluginManager().getPlugin("Vault") == null) {
 			return;
 		}
-		
 		try {
 			RegisteredServiceProvider<Chat> chatProvider = getServer().getServicesManager().getRegistration(Chat.class);
 	        if (chatProvider != null) {
@@ -123,7 +142,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
-	private static final String[] COMMANDS = { "help", "setgroup", "setwgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "addsub", "listgroup", "getgroup" };
+	public static final String[] COMMANDS = { "help", "setgroup", "setwgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "addsub", "listgroup", "getgroup", "reload" };
 	
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
@@ -217,6 +236,14 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					se.sendMessage("/" + label + " listgroup <Player> §8§l- §7Lists every group of a player");
 					se.sendMessage("/" + label + " addsub <GroupFrom> <GroupTo> §8§l- §7Copies the permissions from GroupFrom to GroupTo");
 					se.sendMessage("/" + label + " getgroup <Group> §8§l- §7Lists the permissions, the suffix and the prefix");
+				} else if (args[0].equalsIgnoreCase("reload")) {
+					if (!se.hasPermission("kp.reload")) {
+						se.sendMessage(noPerm());
+						return true;
+					}
+					reloadConfig();
+					
+					se.sendMessage("§6KevsPermissions§8> §aReloaded config.");
 				} else {
 					se.sendMessage(pre + "Use /" + label + " help");
 				}
@@ -439,9 +466,10 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	}
 	
 	private String noPerm() {
-		return pre + "§cYou don't have the permission(s) to do that.";
+		return "§6KevsPermissions §8> §cYou don't have the permission(s) to do that.";
 	}
 
+	@SuppressWarnings("null")
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		if (atts.containsKey(e.getPlayer().getUniqueId())) {
@@ -450,9 +478,26 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 		PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
 		for (PlayerGroup group : config.getPlayersGroup(e.getPlayer().getUniqueId())) {
-			if (group != null) {
-				for (String perm : group.getPermissions()) {
-					at.setPermission(perm, true);
+			try {
+				if (group != null || group.getPermissions() == null) {
+					for (String perm : group.getPermissions()) {
+						at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
+					}
+					if (group.getWorldPerms(e.getPlayer().getWorld().getName()) != null) {
+						for (String perm : group.getWorldPerms(e.getPlayer().getWorld().getName())) {
+							if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
+								at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
+							}
+						}
+					}
+				}
+			} catch (Exception e2) {}
+		}
+		if (config.getPlayers().get(e.getPlayer().getUniqueId() + ".permissions") != null) {
+			List<String> permsToo = config.getPlayers().getStringList(e.getPlayer().getUniqueId() + ".permissions");
+			for (String perm : permsToo) {
+				if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
+					at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
 				}
 			}
 		}

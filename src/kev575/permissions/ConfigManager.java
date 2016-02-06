@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import kev575.obf.PluginSetOutState;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.permission.Permission;
 
@@ -28,31 +29,31 @@ public class ConfigManager {
 		if (!config.exists()) {
 			try {
 				config.createNewFile();
+				groups = YamlConfiguration.loadConfiguration(config);
 				getGroups().set(getDefaultGroup() + ".prefix", "your new prefix");
 				List<String> permissions = new ArrayList<>();
 				permissions.add("your.new.permission");
 				getGroups().set(getDefaultGroup() + ".permissions", permissions);
 				saveGroups();
 			} catch (IOException e) {
-				System.out.println("Can't create File groups.yml");
-				e.printStackTrace();
-				Bukkit.getPluginManager().disablePlugin(plugin);
+				System.out.println("Can't create file groups.yml! There could be more messages after this:");
+				System.out.println("  > " + e.getMessage());
+				PluginSetOutState.a();
 				return;
 			}
 		}
-		groups = YamlConfiguration.loadConfiguration(config);
 		config = new File(plugin.getDataFolder(), "players.yml");
 		if (!config.exists()) {
 			try {
+				players = YamlConfiguration.loadConfiguration(config);
 				config.createNewFile();
 			} catch (IOException e) {
-				System.out.println("Can't create File players.yml");
-				e.printStackTrace();
-				Bukkit.getPluginManager().disablePlugin(plugin);
+				System.out.println("Can't create file players.yml! There could be more messages after this:");
+				System.out.println("  > " + e.getMessage());
+				PluginSetOutState.a();
 				return;
 			}
 		}
-		players = YamlConfiguration.loadConfiguration(config);
 	}
 	
 	public void saveGroups() {
@@ -162,9 +163,13 @@ public class ConfigManager {
 		return cfg;
 	}
 	public FileConfiguration getGroups() {
+		if (groups == null)
+			groups = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "groups.yml"));
 		return groups;
 	}
 	public FileConfiguration getPlayers() {
+		if (players == null)
+			players = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "players.yml"));
 		return players;
 	}
 }
