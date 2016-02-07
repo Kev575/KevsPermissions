@@ -6,12 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import kev575.obf.PluginSetOutState;
 import net.milkbowl.vault.chat.Chat;
-import net.milkbowl.vault.permission.Permission;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,6 +24,7 @@ public class ConfigManager {
 		File config = new File(plugin.getDataFolder(), "groups.yml");
 		if (!config.exists()) {
 			try {
+				config.getParentFile().mkdirs();
 				config.createNewFile();
 				groups = YamlConfiguration.loadConfiguration(config);
 				getGroups().set(getDefaultGroup() + ".prefix", "your new prefix");
@@ -38,22 +35,23 @@ public class ConfigManager {
 			} catch (IOException e) {
 				System.out.println("Can't create file groups.yml! There could be more messages after this:");
 				System.out.println("  > " + e.getMessage());
-				PluginSetOutState.a();
 				return;
 			}
-		}
+		} else
+			groups = YamlConfiguration.loadConfiguration(config);
 		config = new File(plugin.getDataFolder(), "players.yml");
 		if (!config.exists()) {
 			try {
-				players = YamlConfiguration.loadConfiguration(config);
+				config.getParentFile().mkdirs();
 				config.createNewFile();
+				players = YamlConfiguration.loadConfiguration(config);
 			} catch (IOException e) {
 				System.out.println("Can't create file players.yml! There could be more messages after this:");
 				System.out.println("  > " + e.getMessage());
-				PluginSetOutState.a();
 				return;
 			}
-		}
+		} else 
+			players = YamlConfiguration.loadConfiguration(config);
 	}
 	
 	public void saveGroups() {
@@ -91,24 +89,25 @@ public class ConfigManager {
 		}
 	}
 	
+	@Deprecated
 	public void updateVaultPermissions() {
-		if (KevsPermissions.vaultPermission == null)
+	/*	if (KevsPermissions.vaultPermission == null)
 			return;
 		for (OfflinePlayer of : Bukkit.getOfflinePlayers()) {
-			for (PlayerGroup g : getPlayersGroup(of.getUniqueId())) {
-				for (String perm : g.permissions)
+			for (PlayerGroup g : getPlayerGroups(of.getUniqueId())) {
+				for (String perm : g.getPermissions(false))
 					((Permission) KevsPermissions.vaultPermission).playerRemove(null, of, perm);
 					((Permission) KevsPermissions.vaultPermission).playerRemoveGroup(null, of, g.getName());
 			}
 		}
 		for (OfflinePlayer of : Bukkit.getOfflinePlayers()) {
-			for (PlayerGroup g : getPlayersGroup(of.getUniqueId())) {
+			for (PlayerGroup g : getPlayerGroups(of.getUniqueId())) {
 				((Permission) KevsPermissions.vaultPermission).playerAddGroup(null, of, g.getName());
-				for (String perm : g.permissions) {
+				for (String perm : g.getPermissions(false)) {
 					((Permission) KevsPermissions.vaultPermission).playerAdd(null, of, perm);
 				}
 			}
-		}
+		}*/
 	}
 
 	public PlayerGroup getDefaultGroup() {
@@ -127,7 +126,7 @@ public class ConfigManager {
 		plugin.saveConfig();
 	}
 	
-	public List<PlayerGroup> getPlayersGroup(UUID id) {
+	public List<PlayerGroup> getPlayerGroups(UUID id) {
 		List<PlayerGroup> groups = new ArrayList<PlayerGroup>();
 		if (getPlayers().isList(id + ".global.group")) {
 			/*if (players.isString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")) {
@@ -148,7 +147,7 @@ public class ConfigManager {
 	}
 	
 	public PlayerGroup getGroup(String group) {
-		if (!KevsPermissions.config.getGroups().contains(group)) {
+		if (!getGroups().contains(group)) {
 			return null;
 		}
 		return new PlayerGroup(group);

@@ -1,66 +1,19 @@
 package kev575.permissions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.permissions.Permission;
-
 public class PlayerGroup {
 
-	public List<String> permissions;
-	private List<String> inherits;
-	
 	private String name;
 
-	private String prefix, suffix;
-	
 	public PlayerGroup(String name) {
-		
-		
-		
-		if (KevsPermissions.config.getGroup(name) == null) {
-			return;
-		}
-		
 		this.name = name;
-		inherits = KevsPermissions.config.getGroups().getStringList(name + ".inherits");
-		permissions = KevsPermissions.config.getGroups().getStringList(name + ".permissions");
-		if (permissions.contains("*")) {
-			for (Permission perm : Bukkit.getPluginManager().getPermissions()) {
-				permissions.add(perm.getName());
-			}
-		}
-		for (String inhr : inherits) {
-			PlayerGroup g = new PlayerGroup(inhr);
-			if (g == null || g.getPermissions() == null || g.getPermissions().get(0).equalsIgnoreCase(""))
-				continue;
-			for (String per : g.getPermissions()) {
-				if (permissions.contains(per))
-					continue;
-				permissions.add(per);
-			}
-		}
-		
-		/*for (PlayerGroup playerGroup : KevsPermissions.config.getAllGroups()) {
-			for (String per : playerGroup.getPermissions()) {
-				if (permissions.contains(per))
-					continue;
-				permissions.add(per);
-			}
-		}*/
-		
-		prefix = (String) KevsPermissions.config.getGroups().get(name + ".prefix");
-		suffix = (String) KevsPermissions.config.getGroups().get(name + ".suffix");
-		if (prefix == null) { KevsPermissions.config.getGroups().set(name + ".prefix", "prefix"); prefix = ""; }
-		if (suffix == null) { KevsPermissions.config.getGroups().set(name + ".suffix", "suffix"); suffix = ""; }
-		
-		KevsPermissions.config.saveGroups();
-		
 	}
 	
 	public List<String> getWorldPerms(String world) {
-		if (KevsPermissions.config.getGroups().getStringList(name + ".worlds." + world) == null) {
+		if (KevsPermissions.config.getGroups().get(name + ".worlds." + world) == null) {
 			KevsPermissions.config.getGroups().set(name + ".worlds." + world, Arrays.asList("your-world-here"));
 			KevsPermissions.config.saveGroups();
 			return Arrays.asList("");
@@ -73,20 +26,51 @@ public class PlayerGroup {
 		return name;
 	}
 	
-	public List<String> getInherits() {
-		return inherits;
+	public boolean isValid() {
+		return KevsPermissions.config.getGroups().getConfigurationSection(getName()) != null;
 	}
 	
-	public List<String> getPermissions() {
-		return permissions;
+	public List<String> getPermissions(boolean inherits) {
+		if (!inherits) {
+			return KevsPermissions.config.getGroups().getStringList(name + ".permissions");
+		} else {
+			List<String> perms = new ArrayList<String>();
+			for (String n : KevsPermissions.config.getGroups().getStringList(name + ".inherits")) {
+				PlayerGroup current = new PlayerGroup(n);
+				if (!current.isValid() || current.getName().equals(getName()))
+					continue;
+				for (String p : current.getPermissions(false)) {
+					if (!perms.contains(p))
+						perms.add(p);
+				}
+			}
+			return perms;
+		}
+	}
+	
+	public List<PlayerGroup> getInherits() {
+		List<PlayerGroup> groups = new ArrayList<PlayerGroup>();
+		for (String n : KevsPermissions.config.getGroups().getStringList(name + ".inherits")) {
+			groups.add(new PlayerGroup(n));
+		}
+		return groups;
 	}
 	
 	public String getPrefix() {
-		return prefix;
+		return KevsPermissions.config.getGroups().getString(name + ".prefix");
 	}
 	
 	public String getSuffix() {
-		return suffix;
+		return KevsPermissions.config.getGroups().getString(name + ".suffix");
 	}
 	
+	public void setPrefix(String prefix) {
+		KevsPermissions.config.getGroups().set(name + ".prefix", prefix);
+		KevsPermissions.config.saveGroups();
+	}
+	
+	public void setSuffix(String suffix) {
+		KevsPermissions.config.getGroups().set(name + ".suffix", suffix);
+		KevsPermissions.config.saveGroups();
+	}
 }

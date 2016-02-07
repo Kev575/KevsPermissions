@@ -5,13 +5,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
 import kev575.obf.PluginSetInPerms;
 import kev575.obf.PluginSetOutConfig;
 import net.milkbowl.vault.chat.Chat;
-import net.milkbowl.vault.permission.Permission;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -40,15 +40,8 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 
 	public static ConfigManager config;
 	public String pre;
-	
 	public static Object vaultChat;
-	public static Object vaultPermission;
 	HashMap<UUID, PermissionAttachment> atts = new HashMap<UUID, PermissionAttachment>();
-
-	public void disable() {
-		setEnabled(false);
-		return;
-	}
 	
 	@Override
 	public void onEnable() {
@@ -83,7 +76,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 								current = sb.getTeam(gr.getName());
 							current.setPrefix(gr.getPrefix().replace("&", "§"));
 							for (Player p : Bukkit.getOnlinePlayers()) {
-								if (config.getPlayersGroup(p.getUniqueId()).get(0).getName().equals(gr.getName())) {
+								if (config.getPlayerGroups(p.getUniqueId()).get(0).getName().equals(gr.getName())) {
 									current.addPlayer(p);
 								}
 							}
@@ -103,9 +96,9 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	        if (chatProvider != null) {
 	            vaultChat = chatProvider.getProvider();
 	        }
-	        RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(Permission.class);
+	      /*  RegisteredServiceProvider<Permission> permissionProvider = getServer().getServicesManager().getRegistration(Permission.class);
 	        if (permissionProvider != null)
-	        	vaultPermission = permissionProvider.getProvider();
+	        	vaultPermission = permissionProvider.getProvider();*/
 		} catch (Exception e) {}
 	}
 
@@ -125,11 +118,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
-	public static final String[] COMMANDS = { "help", "setgroup", "setwgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "addsub", "listgroup", "getgroup", "reload" };
+	public static final String[] COMMANDS = { "help", "setgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "addsub", "listgroup", "getgroup", "reload"};
 	
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
-		ArrayList<String> l = new ArrayList<>();
+		ArrayList<String> l = new ArrayList<String>();
 		if (cmd.getName().equalsIgnoreCase("kevspermissions")) {
 			List<String> completions = new ArrayList<String>();
 			if (args.length == 1) {
@@ -210,7 +203,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					}
 					se.sendMessage(pre + "Command Help:");
 					se.sendMessage("/" + label + " setgroup <Player> <Group> §8§l- §7Set the group of a player");
-					se.sendMessage("/" + label + " setwgroup <Player> <Group> <Worldname> §8§l- §7Set the group of a player for a world");
+					//se.sendMessage("/" + label + " setwgroup <Player> <Group> <Worldname> §8§l- §7Set the group of a player for a world");
 					se.sendMessage("/" + label + " creategroup <Group> §8§l- §7Creates a group");
 					se.sendMessage("/" + label + " removegroup <Group> §8§l- §7Removes a group");
 					se.sendMessage("/" + label + " setprefix <Group> <Prefix...> §8§l- §7Sets the prefix of a group");
@@ -225,7 +218,6 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						return true;
 					}
 					reloadConfig();
-					
 					se.sendMessage("§6KevsPermissions§8> §aReloaded config.");
 				} else {
 					se.sendMessage(pre + "Use /" + label + " help");
@@ -237,17 +229,18 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					try {
-						if (config.getGroup(args[1]).getName().equalsIgnoreCase(args[1])) {
-							se.sendMessage(pre + "The group \"" + args[1] + "\" already exists. :(");
-							return true;
-						}
-					} catch (Exception e) {}
+					if (new PlayerGroup(args[1]).isValid()) {
+						se.sendMessage(pre + "The group \"" + args[1] + "\" already exists.");
+						return true;
+					}
 					config.getGroups().set(args[1] + ".prefix", "your new prefix");
 					config.getGroups().set(args[1] + ".suffix", "your new suffix");
 					List<String> permissions = new ArrayList<>();
 					permissions.add("your.new.permission");
 					config.getGroups().set(args[1] + ".permissions", permissions);
+					permissions = new ArrayList<>();
+					permissions.add("your-new-inherit");
+					config.getGroups().set(args[1] + ".inherits", permissions);
 					config.saveGroups();
 					se.sendMessage(pre + "§2Group §7\"" + args[1] + "\"§2 successfully created!");
 					for (Player p : Bukkit.getOnlinePlayers()) {
@@ -262,7 +255,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					if (config.getGroup(args[1]) == null) {
+					if (!new PlayerGroup(args[1]).isValid()) {
 						se.sendMessage(pre + "The group \"" + args[1] + "\" does not exist. :(");
 						return true;
 					}
@@ -281,7 +274,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					if (!config.getGroup(args[1]).getName().equals(args[1])) {
+					if (!new PlayerGroup(args[1]).isValid()) {
 						se.sendMessage(pre + "The group \"" + args[1] + "\" does not exist. :(");
 						return true;
 					}
@@ -291,7 +284,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					se.sendMessage("  §ePrefix§8: §7" + group.getPrefix() + " §8(§r" + group.getPrefix().replace("&", "§") + "§8)");
 					se.sendMessage("  §eSuffix§8: §7" + group.getSuffix() + " §8(§r" + group.getSuffix().replace("&", "§") + "§8)");
 					se.sendMessage("  §ePermissions§8:");
-					for (String perm : group.getPermissions()) {
+					for (String perm : group.getPermissions(false)) {
+						se.sendMessage("    §7- §a" + perm);
+					}
+					se.sendMessage("  §eInherits§8:");
+					for (String perm : group.getPermissions(true)) {
 						se.sendMessage("    §7- §a" + perm);
 					}
 					
@@ -305,8 +302,8 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						return true;
 					}
 					se.sendMessage(pre + "§3Group(s) of " + args[1] + ":");
-					se.sendMessage("" + config.getPlayersGroup(Bukkit.getOfflinePlayer(args[1]).getUniqueId()));
-					for (PlayerGroup group : config.getPlayersGroup(Bukkit.getOfflinePlayer(args[1]).getUniqueId())) {
+					se.sendMessage("" + config.getPlayerGroups(Bukkit.getOfflinePlayer(args[1]).getUniqueId()));
+					for (PlayerGroup group : config.getPlayerGroups(Bukkit.getOfflinePlayer(args[1]).getUniqueId())) {
 						if (group != null) {
 							se.sendMessage("  §eGroup§8: §7" + group.getName());
 							se.sendMessage("    §ePrefix§8: §7" + group.getPrefix() + " §8(§r" + group.getPrefix().replace("&", "§") + "§8)");
@@ -358,12 +355,10 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					
 					if (config.getGroup(args[2]) == null) {
 						se.sendMessage(pre + "The group \"" + args[2] + "\" doesn't exist. :(");
 						return true;
 					}
-					
 					List<String> groups = config.getPlayers().getStringList(Bukkit.getOfflinePlayer(args[1]).getUniqueId() + ".global.group");
 					if (groups.contains(args[2])) {
 						se.sendMessage(pre + "Removed group " + args[2] + " from " + args[1]);
@@ -382,7 +377,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					List<String> s = config.getGroup(args[1]).getPermissions();
+					List<String> s = config.getGroup(args[1]).getPermissions(false);
 					if (s.contains(args[2])) {
 						s.remove(args[2]);
 						se.sendMessage(pre + "Removed permission §a" + args[2] + "§7 from group " + args[1] + "!");
@@ -393,7 +388,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					config.getGroups().set(args[1] + ".permissions", s);
 					config.saveGroups();
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						for (PlayerGroup gru : config.getPlayersGroup(p.getUniqueId())) {
+						for (PlayerGroup gru : config.getPlayerGroups(p.getUniqueId())) {
 							if (gru.getName().equalsIgnoreCase(args[0])) {
 								onJoin(new PlayerJoinEvent(p, ""));
 							}
@@ -411,9 +406,17 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(pre + "§cThat groups are equals...");
 						return true;
 					}
+					if (!groupFrom.isValid()) {
+						se.sendMessage(pre + "§cThe group " + groupFrom.getName() + " is not valid.");
+						return true;
+					}
+					if (!groupTo.isValid()) {
+						se.sendMessage(pre + "§cThe group " + groupTo.getName() + " is not valid.");
+						return true;
+					}
 					
-					List<String> permsFrom = groupFrom.permissions;
-					List<String> permsTo = groupTo.permissions;
+					List<String> permsFrom = groupFrom.getPermissions(false);
+					List<String> permsTo = groupTo.getPermissions(false);
 					int i = 0;
 					for (String addto : permsFrom) {
 						if (!permsTo.contains(addto)) {
@@ -428,19 +431,6 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				} else {
 					se.sendMessage(pre + "Use /" + label + " help");
 				}
-			} else if (args.length == 4) {
-				if (args[0].equalsIgnoreCase("setwgroup")) {
-					if (!se.hasPermission("kp.setwgroup")) {
-						se.sendMessage(noPerm());
-						return true;
-					}
-					config.getPlayers().set(Bukkit.getOfflinePlayer(args[1]).getUniqueId() + "." + args[3] + ".group", args[2]);
-					config.savePlayers();
-					se.sendMessage(pre + "Group of " + args[1] + " changed to " + args[2]);
-					if (Bukkit.getOfflinePlayer(args[1]).isOnline()) {
-						onJoin(new PlayerJoinEvent(Bukkit.getPlayer(args[1]), ""));
-					}
-				}
 			} else {
 				se.sendMessage(pre + "Use /" + label + " help");
 			}
@@ -449,42 +439,48 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	}
 	
 	private String noPerm() {
-		return "§6KevsPermissions §8> §cYou don't have the permission(s) to do that.";
+		return new Random().nextBoolean() ? "§6KevsPermissions §8> §cYou don't have the permission(s) to do that." : "§6KevsPermissions §8> §cYou lack the permission(s) to do that.";
 	}
 
 	@SuppressWarnings("null")
 	@EventHandler
-	public void onJoin(PlayerJoinEvent e) {
-		if (atts.containsKey(e.getPlayer().getUniqueId())) {
-			disablePermission(atts.get(e.getPlayer().getUniqueId()));
-			atts.remove(e.getPlayer().getUniqueId());
-		}
-		PermissionAttachment at = e.getPlayer().addAttachment(this, 1728000);
-		for (PlayerGroup group : config.getPlayersGroup(e.getPlayer().getUniqueId())) {
-			try {
-				if (group != null || group.getPermissions() == null) {
-					for (String perm : group.getPermissions()) {
-						at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
-					}
-					if (group.getWorldPerms(e.getPlayer().getWorld().getName()) != null) {
-						for (String perm : group.getWorldPerms(e.getPlayer().getWorld().getName())) {
-							if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
+	public void onJoin(final PlayerJoinEvent e) {
+		Thread t = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				if (atts.containsKey(e.getPlayer().getUniqueId())) {
+					disablePermission(atts.get(e.getPlayer().getUniqueId()));
+					atts.remove(e.getPlayer().getUniqueId());
+				}
+				PermissionAttachment at = e.getPlayer().addAttachment(KevsPermissions.getPlugin(KevsPermissions.class), 1728000);
+				for (PlayerGroup group : config.getPlayerGroups(e.getPlayer().getUniqueId())) {
+					try {
+						if (group != null || group.getPermissions(false) == null) {
+							for (String perm : group.getPermissions(false)) {
 								at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
 							}
+							if (group.getWorldPerms(e.getPlayer().getWorld().getName()) != null) {
+								for (String perm : group.getWorldPerms(e.getPlayer().getWorld().getName())) {
+									if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
+										at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
+									}
+								}
+							}
+						}
+					} catch (Exception e2) {}
+				}
+				if (config.getPlayers().get(e.getPlayer().getUniqueId() + ".permissions") != null) {
+					List<String> permsToo = config.getPlayers().getStringList(e.getPlayer().getUniqueId() + ".permissions");
+					for (String perm : permsToo) {
+						if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
+							at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
 						}
 					}
 				}
-			} catch (Exception e2) {}
-		}
-		if (config.getPlayers().get(e.getPlayer().getUniqueId() + ".permissions") != null) {
-			List<String> permsToo = config.getPlayers().getStringList(e.getPlayer().getUniqueId() + ".permissions");
-			for (String perm : permsToo) {
-				if (!at.getPermissions().containsKey(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm)) {
-					at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
-				}
+				atts.put(e.getPlayer().getUniqueId(), at);
 			}
-		}
-		atts.put(e.getPlayer().getUniqueId(), at);
+		});
+		t.start();
 	}
 	
 	@EventHandler
