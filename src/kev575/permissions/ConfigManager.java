@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import kev575.sql.KevSQL;
+import kev575.sql.SQLManager;
 import net.milkbowl.vault.chat.Chat;
 
 import org.bukkit.World;
@@ -18,9 +20,25 @@ public class ConfigManager {
 	private FileConfiguration cfg;
 	private FileConfiguration groups;
 	private FileConfiguration players;
+	private SQLManager manager;
+	
+	public void setGroups(FileConfiguration groups) {
+		this.groups = groups;
+	}
+
+	public void setPlayers(FileConfiguration players) {
+		this.players = players;
+	}
+
 	public ConfigManager(KevsPermissions kevsPermissions) {
 		plugin = kevsPermissions;
 		cfg = plugin.getConfig();
+		if (cfg.getBoolean("mysql.enable")) {
+			try {
+				manager = new SQLManager(cfg.getString("mysql.host"), cfg.getString("mysql.database"), cfg.getString("mysql.user"), cfg.getString("mysql.password"), cfg.getInt("mysql.port"));
+				manager.connect();
+			} catch (Exception e) { System.out.println("Can not connect to SQL server. There may be more messages after this.\n  > " + e.getMessage()); if (e.getSuppressed()[0] != null) System.out.println("    > " + e.getSuppressed()[0].getMessage()); manager = null; }
+		}
 		File config = new File(plugin.getDataFolder(), "groups.yml");
 		if (!config.exists()) {
 			try {
@@ -54,6 +72,10 @@ public class ConfigManager {
 			players = YamlConfiguration.loadConfiguration(config);
 	}
 	
+	public SQLManager getSQLManager() {
+		return manager;
+	}
+	
 	public void saveGroups() {
 		File config = new File(plugin.getDataFolder(), "groups.yml");
 		try {
@@ -62,6 +84,7 @@ public class ConfigManager {
 			System.out.println("Can't save File groups.yml");
 			e.printStackTrace();
 		}
+		KevSQL.save();
 		
 		updateVaultPermissions();
 		updateVaultChat();
@@ -75,6 +98,7 @@ public class ConfigManager {
 			System.out.println("Can't save File players.yml");
 			e.printStackTrace();
 		}
+		KevSQL.save();
 		
 		updateVaultPermissions();
 		updateVaultChat();
@@ -115,6 +139,7 @@ public class ConfigManager {
 	}
 	
 	public ArrayList<PlayerGroup> getAllGroups() {
+		KevSQL.get();
 		ArrayList<PlayerGroup> al = new ArrayList<>();
 		for (String str : getGroups().getValues(false).keySet()) {
 			al.add(new PlayerGroup(str));
@@ -127,6 +152,7 @@ public class ConfigManager {
 	}
 	
 	public List<PlayerGroup> getPlayerGroups(UUID id) {
+		KevSQL.get();
 		List<PlayerGroup> groups = new ArrayList<PlayerGroup>();
 		if (getPlayers().isList(id + ".global.group")) {
 			/*if (players.isString(id + "." + Bukkit.getPlayer(id).getWorld().getName() + ".group")) {
@@ -147,6 +173,7 @@ public class ConfigManager {
 	}
 	
 	public PlayerGroup getGroup(String group) {
+		KevSQL.get();
 		if (!getGroups().contains(group)) {
 			return null;
 		}
@@ -156,17 +183,21 @@ public class ConfigManager {
 	public void setPlayersGroup(UUID id, String group) {
 		players.set(id + ".global.group", group);
 		savePlayers();
+		KevSQL.save();
 	}
 	
 	public FileConfiguration getCfg() {
+		KevSQL.get();
 		return cfg;
 	}
 	public FileConfiguration getGroups() {
+		KevSQL.get();
 		if (groups == null)
 			groups = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "groups.yml"));
 		return groups;
 	}
 	public FileConfiguration getPlayers() {
+		KevSQL.get();
 		if (players == null)
 			players = YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "players.yml"));
 		return players;

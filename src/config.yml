@@ -11,3 +11,11 @@ chatman: "&7%x%p&8: &7%m"
 # (can only be undo using scoreboard commands)
 #  use this for the prefix in the tablist
 scoreboardmanager: false
+
+mysql:
+  enable: false
+  host: localhost
+  port: 3306
+  database: minecraft
+  user: grassblock
+  password: obsidian

@@ -27,6 +27,7 @@ public class PlayerGroup {
 	}
 	
 	public boolean isValid() {
+		
 		return KevsPermissions.config.getGroups().getConfigurationSection(getName()) != null;
 	}
 	
