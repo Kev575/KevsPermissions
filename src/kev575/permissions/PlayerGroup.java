@@ -16,17 +16,14 @@ public class PlayerGroup {
 	private String prefix, suffix;
 	
 	public PlayerGroup(String name) {
-		if (KevsPermissions.config.getGroups().getConfigurationSection(name) == null) {
-			name = KevsPermissions.config.getCfg().getString("default");
+		
+		
+		
+		if (KevsPermissions.config.getGroup(name) == null) {
 			return;
 		}
+		
 		this.name = name;
-		if (KevsPermissions.config.getGroups().get(name + ".permissions") == null) {
-			KevsPermissions.config.getGroups().set(name + ".permissions", Arrays.asList("your.new.permission"));
-		}
-		if (KevsPermissions.config.getGroups().get(name + ".inherits") == null) {
-			KevsPermissions.config.getGroups().set(name + ".inherits", Arrays.asList("group-inherit"));
-		}
 		inherits = KevsPermissions.config.getGroups().getStringList(name + ".inherits");
 		permissions = KevsPermissions.config.getGroups().getStringList(name + ".permissions");
 		if (permissions.contains("*")) {
@@ -44,12 +41,19 @@ public class PlayerGroup {
 				permissions.add(per);
 			}
 		}
+		
+		/*for (PlayerGroup playerGroup : KevsPermissions.config.getAllGroups()) {
+			for (String per : playerGroup.getPermissions()) {
+				if (permissions.contains(per))
+					continue;
+				permissions.add(per);
+			}
+		}*/
+		
 		prefix = (String) KevsPermissions.config.getGroups().get(name + ".prefix");
 		suffix = (String) KevsPermissions.config.getGroups().get(name + ".suffix");
 		if (prefix == null) { KevsPermissions.config.getGroups().set(name + ".prefix", "prefix"); prefix = ""; }
 		if (suffix == null) { KevsPermissions.config.getGroups().set(name + ".suffix", "suffix"); suffix = ""; }
-		
-		
 		
 		KevsPermissions.config.saveGroups();
 		

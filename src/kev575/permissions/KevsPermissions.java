@@ -52,29 +52,12 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	
 	@Override
 	public void onEnable() {
-		//pre = "§8[§6KevsPermissions§8]§7 "; #OLD PREFIX xD
+		config = new ConfigManager(this);
 		pre = "§6KevsPermission §8> §7";
 		saveDefaultConfig();
 		PluginSetInPerms.a();
 		PluginSetOutConfig.a(getConfig());
 		PluginSetOutConfig.b(this);
-		/*if (getConfig().get("allow-modules") != null && getConfig().getBoolean("allow-modules")) {
-			System.out.println("[KevsPermissions] Downloading Kev's ModuleManager!");
-			try {
-				File modulemanager = new File(getDataFolder(), "modulemanager.jar");
-				FileUtils.copyURLToFile(new URL("https://kev575.github.io/files/modulemanager.jar"), modulemanager);
-				Bukkit.getPluginManager().enablePlugin(Bukkit.getPluginManager().loadPlugin(modulemanager));
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println();
-				System.out.println("-- The KP Module \"modulemanager.jar\" could not be loaded! See the stacktrace above! :(");
-				System.out.println();
-			}
-			
-		} else {
-			System.out.println("[KevsPermissions] Kev's Modules are disabled. You cannot use the really cool stuff! Change allow-modules in the config.yml to enable them :)");
-		}*/
-		config = new ConfigManager(this);
 		pre = config.getCfg().isString("prefix") ? config.getCfg().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
 		for (Player p : Bukkit.getOnlinePlayers()) {
