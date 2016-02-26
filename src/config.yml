@@ -1,4 +1,3 @@
-antibuild: false
 # default group
 default: default
 # your new prefix
@@ -10,12 +9,5 @@ chatman: "&7%x%p&8: &7%m"
 # only activate if you do not need scoreboard teams (e.g. for minigames plugins)
 # (can only be undo using scoreboard commands)
 #  use this for the prefix in the tablist
-scoreboardmanager: false
-
-mysql:
-  enable: false
-  host: localhost
-  port: 3306
-  database: minecraft
-  user: grassblock
-  password: obsidian
+# Do you want to use vault?
+usevault: false

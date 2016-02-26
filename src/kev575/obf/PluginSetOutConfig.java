@@ -6,10 +6,7 @@ import org.bukkit.plugin.Plugin;
 public class PluginSetOutConfig {
 
 	public static void a(FileConfiguration arg0) {
-		if (arg0.get("antibuild") == null) {
-			arg0.set("antibuild", false);
-		}
-		if (arg0.get("default") == null) {
+		/*if (arg0.get("default") == null) {
 			arg0.set("default", "default");
 		}
 		if (arg0.get("chatman") == null) {
@@ -18,6 +15,9 @@ public class PluginSetOutConfig {
 		if (arg0.get("scoreboardmanager") == null) {
 			arg0.set("scoreboardmanager", false);
 		}
+		if (arg0.get("usevault") == null) {
+			arg0.set("usevault", false);
+		}*/
 	}
 
 	public static void b(Plugin arg0) {
