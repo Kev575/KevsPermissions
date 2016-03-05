@@ -3,6 +3,8 @@ package kev575.json;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import kev575.permissions.KevsPermissions;
+
 public class KevsPermsPlayer {
 	private ArrayList<String> groups;
 	private HashMap<String, ArrayList<String>> permissions;
@@ -33,8 +35,11 @@ public class KevsPermsPlayer {
 	}
 	
 	public void fix() {
-		if (groups == null)
-			groups = new ArrayList<String>();
+		if (groups == null) {
+			ArrayList<String> str = new ArrayList<String>();
+			str.add(KevsPermissions.config.getConfig().getString("default"));
+			groups = str;
+		}
 		if (permissions == null)
 			permissions = new HashMap<String, ArrayList<String>>();
 		if (suffix == null)

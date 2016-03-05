@@ -1,13 +1,13 @@
-# default group
 default: default
-# your new prefix
-prefix: ""
 enablemanagers: false
 enablechatman: false
-# %x: prefix; %s: suffix; %p: playername; %m: message;
-chatman: "&7%x%p&8: &7%m"
-# only activate if you do not need scoreboard teams (e.g. for minigames plugins)
-# (can only be undo using scoreboard commands)
-#  use this for the prefix in the tablist
-# Do you want to use vault?
+chatman: "&7%x%p&7%s&8: &7%m"
 usevault: false
+
+mysql:
+  enabled: false
+  ip: "yourip.tld"
+  port: 3306
+  database: "walrus_database"
+  username: "seagull_username"
+  password: "your_secret_password"

@@ -4,9 +4,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import kev575.json.KevsPermsGroup;
+import kev575.json.KevsPermsPlayer;
+import kev575.obf.PluginSetInPerms;
+import kev575.obf.PluginSetOutConfig;
+import kev575.sql.KevSQL;
+import net.milkbowl.vault.chat.Chat;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -22,12 +30,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
-import kev575.json.KevsPermsGroup;
-import kev575.json.KevsPermsPlayer;
-import kev575.obf.PluginSetInPerms;
-import kev575.obf.PluginSetOutConfig;
-import net.milkbowl.vault.chat.Chat;
-
 public class KevsPermissions extends JavaPlugin implements Listener {
 
 	public static KevsPermsManager config;
@@ -37,13 +39,20 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	
 	@Override
 	public void onEnable() {
-		config = new KevsPermsManager(this);
-		pre = "§6KevsPermission §8> §7";
 		saveDefaultConfig();
+		if (getConfig().getBoolean("mysql.enabled")) {
+			try {
+				config = new KevsPermsManager(this, new KevSQL(getConfig().getString("mysql.ip"), getConfig().getString("mysql.database"), getConfig().getString("mysql.username"), getConfig().getString("mysql.passwd"), getConfig().getInt("mysql.port")));				
+			} catch (Exception e) { config = new KevsPermsManager(this); }
+		}
+		if (config.getSql() == null) {
+			config = new KevsPermsManager(this);
+		}
+		pre = "§6KevsPermission §8> §7";
 		PluginSetInPerms.a();
 		PluginSetOutConfig.a(getConfig());
 		PluginSetOutConfig.b(this);
-		pre = config.getConfig().isString("prefix") ? config.getConfig().getString("prefix") : pre;
+		//pre = (config.getConfig().get("prefix") != "") ? config.getConfig().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
 		reloadAllPlayers();
 		if (config.getConfig().isBoolean("enablemanagers") && config.getConfig().getBoolean("enablemanagers") && config.getConfig().getBoolean("usevault")) {
@@ -82,6 +91,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 //				}, 20, 20);
 			}
 		}
+		if (config.getGroup(config.getConfig().getString("default")) == null) {
+			KevsPermsGroup gr = new KevsPermsGroup();
+			gr.fix();
+			config.saveGroup(config.getConfig().getString("default"), gr);
+		}
 	}
 	
 	private void setupProvider() {
@@ -110,7 +124,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		}
 	}
 	
-	public static final String[] COMMANDS = { "help", "setgroup", "insertgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "copyto", "listgroup", "getgroup", "reload"};
+	public static final String[] COMMANDS = { "help", "setplayerperm", "setgroup", "insertgroup", "setsuffix", "creategroup", "removegroup", "setprefix", "setperm", "copyto", "listgroup", "groupinfo", "reload"};
 	
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
@@ -124,32 +138,18 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				Collections.sort(completions);
 				return completions;
 			} else if (args.length == 2) {
-				if (args[0].equalsIgnoreCase("setgroup")) {
+				if (args[0].equalsIgnoreCase("setgroup") || args[0].equalsIgnoreCase("setplayerperm") || args[0].equalsIgnoreCase("listgroup")) {
+					String partialCommand = args[1];
+					ArrayList<String> list = new ArrayList<String>();
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						l.add(p.getName());
+						list.add(p.getName());
 					}
-				} else if (args[0].equalsIgnoreCase("setwgroup")) {
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						l.add(p.getName());
-					}
-				} else if (args[0].equalsIgnoreCase("listgroup")) {
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						l.add(p.getName());
-					}
-				} else if (args[0].equalsIgnoreCase("removegroup") || args[0].equalsIgnoreCase("copyto") || args[0].equalsIgnoreCase("getgroup")) {
-					String partialCommand = args[0];
-					Set<String> commands = config.getGroups().getValues(false).keySet();
+					Set<String> commands = new HashSet<String>(list);
 					StringUtil.copyPartialMatches(partialCommand, commands, completions);
 					Collections.sort(completions);
 					return completions;
-				} else if (args[0].equalsIgnoreCase("setprefix") || args[0].equalsIgnoreCase("setsuffix")) {
-					String partialCommand = args[0];
-					Set<String> commands = config.getGroups().getValues(false).keySet();
-					StringUtil.copyPartialMatches(partialCommand, commands, completions);
-					Collections.sort(completions);
-					return completions;
-				} else if (args[0].equalsIgnoreCase("setperm")) {
-					String partialCommand = args[0];
+				} else if (args[0].equalsIgnoreCase("setprefix") || args[0].equalsIgnoreCase("setsuffix") || args[0].equalsIgnoreCase("setperm") || args[0].equalsIgnoreCase("removegroup") || args[0].equalsIgnoreCase("copyto") || args[0].equalsIgnoreCase("groupinfo")) {
+					String partialCommand = args[1];
 					Set<String> commands = config.getGroups().getValues(false).keySet();
 					StringUtil.copyPartialMatches(partialCommand, commands, completions);
 					Collections.sort(completions);
@@ -157,13 +157,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				}
 			} else if (args.length == 3) {
 				if (args[0].equalsIgnoreCase("setgroup") || args[0].equalsIgnoreCase("copyto")) {
-					String partialCommand = args[0];
-					Set<String> commands = config.getGroups().getValues(false).keySet();
-					StringUtil.copyPartialMatches(partialCommand, commands, completions);
-					Collections.sort(completions);
-					return completions;
-				} else if (args[0].equalsIgnoreCase("setwgroup")) {
-					String partialCommand = args[0];
+					String partialCommand = args[1];
 					Set<String> commands = config.getGroups().getValues(false).keySet();
 					StringUtil.copyPartialMatches(partialCommand, commands, completions);
 					Collections.sort(completions);
@@ -172,7 +166,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					l.add("<Prefix...>");
 				} else if (args[0].equalsIgnoreCase("setsuffix")) {
 					l.add("<Suffix...>");
-				} else if (args[0].equalsIgnoreCase("setperm")) {
+				} else if (args[0].equalsIgnoreCase("setperm") || args[0].equalsIgnoreCase("setplayerperm")) {
 					l.add("<Permission>");
 				}
 			}
@@ -193,23 +187,24 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					se.sendMessage(pre + "Command Help:");
-					se.sendMessage("/" + label + " setgroup <Player> <Group> §8§l- §7Set the group of a player");
-					se.sendMessage("/" + label + " creategroup <Group> §8§l- §7Creates a group");
-					se.sendMessage("/" + label + " removegroup <Group> §8§l- §7Removes a group");
-					se.sendMessage("/" + label + " setprefix <Group> <Prefix...> §8§l- §7Sets the prefix of a group");
-					se.sendMessage("/" + label + " setsuffix <Group> <Prefix...> §8§l- §7Sets the suffix of a group");
-					se.sendMessage("/" + label + " setperm <Group> <World>:<Permission> §8§l- §7Toggle a permissions of a group");
-					se.sendMessage("/" + label + " listgroup <Player> §8§l- §7Lists every group of a player");
-					se.sendMessage("/" + label + " copyto <GroupFrom> <GroupTo> §8§l- §7Copies the permissions from GroupFrom to GroupTo");
-					se.sendMessage("/" + label + " getgroup <Group> §8§l- §7Lists the permissions, the suffix and the prefix");
+					String string = "/kp setgroup <Player> <Group> - set the group for a player\n"
+							+ "/kp creategroup <Group> - create a group\n/kp removegroup <Group> - removes a group\n"
+							+ "/kp setprefix <Group> <Prefix...> - set the prefix of a group\n"
+							+ "/kp setperm <Group> <World>:<Permission> - adds/removes the perm of a group for a world (use * for global)\n"
+							+ "/kp listgroup <Player> - show player groups / permissions\n"
+							+ "/kp copyto <GroupFrom> <GroupTo> - copy and overrides the permissions of a group\n"
+							+ "/kp getgroup <Group> - show groups permissions / inherits\n"
+							+ "/kp setplayerperm <Player> <World>:<Permission> - adds/removes the perm of a player for a world (use * for global)\n"
+							+ "/kp insertgroup <Player> <Group> - set the 1. group of a player (overriden prefix)\n"
+							+ "Permissions?! Just use kp.<subcommand> for example: kp.setgroup and kp.insertgroup";
+					se.sendMessage(string.split("\n"));
 				} else if (args[0].equalsIgnoreCase("reload")) {
 					if (!se.hasPermission("kp.reload")) {
 						se.sendMessage(noPerm());
 						return true;
 					}
 					reloadConfig();
-					se.sendMessage("§6KevsPermissions§8> §aReloaded config. §7§oIf you want to reload the groups.yml or the players.yml restart the server (or reload it)!");
+					se.sendMessage("§6KevsPermissions§8> §aReloaded config. §7§oIf you want to reload the groups_json.yml or the players_json.yml restart the server (or reload it)!");
 				} else {
 					se.sendMessage(pre + "Use /" + label + " help");
 				}
@@ -377,19 +372,26 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						return true;
 					}
 					if (config.getGroup(args[1]) == null) {
-						se.sendMessage(pre + "The group \"" + args[1] + "\" doesn't exist. :(");
+						se.sendMessage(pre + "§cThe group \"" + args[1] + "\" doesn't exist. :(");
+						return true;
+					}
+					if (args[2].split(":").length <= 1) {
+						se.sendMessage(pre + "§cPlease use <world>:<permission>. For global use *:<permission>.");
 						return true;
 					}
 					KevsPermsGroup group = config.getGroup(args[1]);
 					HashMap<String, ArrayList<String>> perms = group.getPermissions();
 					ArrayList<String> s = perms.get(args[2].split(":")[0]);
 					perms.remove(args[2].split(":")[0]);
+					if (s == null) {
+						s = new ArrayList<String>();
+					}
 					if (s.contains(args[2].split(":")[1])) {
-						se.sendMessage(pre + "§aAdded permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a to group §e" + args[1] + "§a!");
+						se.sendMessage(pre + "§aRemoved permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a from group §e" + args[1] + "§a!");
 						s.remove(args[2].split(":")[1]);
 					} else {
 						s.add(args[2].split(":")[1]);
-						se.sendMessage(pre + "§aRemoved permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a from group §e" + args[1] + "§a!");
+						se.sendMessage(pre + "§aAdded permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a to group §e" + args[1] + "§a!");
 					}
 					perms.put(args[2].split(":")[0], s);
 					group.setPermissions(perms);
@@ -401,23 +403,30 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 						se.sendMessage(noPerm());
 						return true;
 					}
-					UUID uniqueID = Bukkit.getOfflinePlayer(args[1]).getUniqueId();
+					if (args[2].split(":").length <= 1) {
+						se.sendMessage(pre + "§cPlease use <world>:<permission>. For global use *:<permission>.");
+						return true;
+					}
+					UUID uniqueId = Bukkit.getOfflinePlayer(args[1]).getUniqueId();
 					
-					KevsPermsPlayer player = config.getPlayer(uniqueID);
+					KevsPermsPlayer player = config.getPlayer(uniqueId);
 					
 					HashMap<String, ArrayList<String>> perms = player.getPermissions();
 					ArrayList<String> s = perms.get(args[2].split(":")[0]);
 					perms.remove(args[2].split(":")[0]);
+					if (s == null) {
+						s = new ArrayList<>();
+					}
 					if (s.contains(args[2].split(":")[1])) {
-						se.sendMessage(pre + "§aAdded permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a to player §e" + args[1] + "§a!");
+						se.sendMessage(pre + "§aRemoved permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a from player §e" + args[1] + "§a!");
 						s.remove(args[2].split(":")[1]);
 					} else {
 						s.add(args[2].split(":")[1]);
-						se.sendMessage(pre + "§aRemoved permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a from player §e" + args[1] + "§a!");
+						se.sendMessage(pre + "§aAdded permission §e" + args[2].split(":")[1] + "§a at world §e" + args[2].split(":")[0] + "§a to player §e" + args[1] + "§a!");
 					}
 					perms.put(args[2].split(":")[0], s);
 					player.setPermissions(perms);
-					
+					config.savePlayer(uniqueId, player);
 					reloadAllPlayers();
 				} else if (args[0].equalsIgnoreCase("copyto")) {
 					if (!se.hasPermission("kp.copyto")) {
@@ -481,10 +490,15 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				PermissionAttachment at = e.getPlayer().addAttachment(KevsPermissions.getPlugin(KevsPermissions.class), 1728000);
 				applyToAt(at, e.getPlayer().getUniqueId(), e.getPlayer().getWorld().getName(), null);
 				KevsPermsPlayer player = config.getPlayer(e.getPlayer().getUniqueId());
-				ArrayList<String> global = player.getPermissions().get("*");
-				for (String perm : global) {
-					at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
+				if (player.getGroups().size() == 0) {
+					player.setGroups((ArrayList<String>) Arrays.asList(config.getConfig().getString("default")));
+					config.savePlayer(e.getPlayer().getUniqueId(), player);
 				}
+				ArrayList<String> global = player.getPermissions().get("*");
+				if (global != null)
+					for (String perm : global) {
+						at.setPermission(perm.startsWith("-") ? perm.substring(1, perm.length()) : perm, perm.startsWith("-") ? false : true);
+					}
 				ArrayList<String> worldPerms = player.getPermissions().get(e.getPlayer().getWorld().getName());
 				if (worldPerms != null) {
 					for (String perm : worldPerms) {

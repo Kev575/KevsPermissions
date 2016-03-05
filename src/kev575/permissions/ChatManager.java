@@ -1,20 +1,18 @@
 package kev575.permissions;
 
+import kev575.json.KevsPermsPlayer;
+
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
-import kev575.json.KevsPermsPlayer;
-
 public class ChatManager implements Listener {
 
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
-		
 		if (KevsPermissions.vaultChat != null)
 			return;
-		
 		if (KevsPermissions.config.getConfig().isBoolean("enablemanagers")) {
 			if (KevsPermissions.config.getConfig().getBoolean("enablemanagers") && KevsPermissions.config.getConfig().getBoolean("enablechatman")) {
 				if (e.getPlayer().hasPermission("kp.chatcolor")) {
@@ -39,5 +37,4 @@ public class ChatManager implements Listener {
 			}
 		}
 	}
-	
 }

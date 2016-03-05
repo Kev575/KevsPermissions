@@ -2,16 +2,21 @@ package kev575.permissions;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import kev575.json.KevsPermsGroup;
+import kev575.json.KevsPermsPlayer;
+import kev575.sql.KevSQL;
+
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-
-import kev575.json.KevsPermsGroup;
-import kev575.json.KevsPermsPlayer;
 
 public class KevsPermsManager {
 	
@@ -19,10 +24,47 @@ public class KevsPermsManager {
 	private FileConfiguration cfg;
 	private FileConfiguration groups;
 	private FileConfiguration players;
+	
+	private KevSQL sql;
 
 	public KevsPermsManager(KevsPermissions kevsPermissions) {
 		plugin = kevsPermissions;
 		cfg = plugin.getConfig();
+		File groupsFile = new File(plugin.getDataFolder(), "groups_json.yml");
+		File playersFile = new File(plugin.getDataFolder(), "players_json.yml");
+		if (!groupsFile.exists()) {
+			try {
+				groupsFile.getParentFile().mkdirs();
+				groupsFile.createNewFile();
+			} catch (IOException e) {
+				System.out.println("Can not create groups_json.yml!!!: " + e.getMessage());
+				Bukkit.getPluginManager().disablePlugin(plugin);
+				return;
+			}			
+		}
+		if (!playersFile.exists()) {
+			try {
+				playersFile.getParentFile().mkdirs();
+				playersFile.createNewFile();
+			} catch (IOException e) {
+				System.out.println("Can not create players_json.yml!!!: " + e.getMessage());
+				Bukkit.getPluginManager().disablePlugin(plugin);
+				return;
+			}
+		}
+		groups = YamlConfiguration.loadConfiguration(groupsFile);
+		players = YamlConfiguration.loadConfiguration(playersFile);
+	}
+
+	public KevSQL getSql() {
+		return sql;
+	}
+	
+	public KevsPermsManager(KevsPermissions kevsPermissions, KevSQL kevSQL) {
+		sql = kevSQL;
+		cfg = plugin.getConfig();
+		sql.connect();
+		sql.defaultTables();
 	}
 
 	public FileConfiguration getConfig() {
@@ -32,12 +74,22 @@ public class KevsPermsManager {
 	public FileConfiguration getGroups() {
 		return groups;
 	}
-
+	
 	public FileConfiguration getPlayers() {
 		return players;
 	}
 	
 	public KevsPermsPlayer getPlayer(UUID uniqueId) {
+		if (getSql() != null) {
+			ResultSet set = getSql().query("SELECT * FROM kevspermissions_players WHERE uuid='" + uniqueId.toString() + "'");
+			KevsPermsPlayer player = null;
+			try {
+				player = new Gson().fromJson(set.getString("gson"), KevsPermsPlayer.class);
+				player.fix();
+				set.close();
+			} catch (JsonSyntaxException | SQLException e) { if (player == null) {player = new KevsPermsPlayer(); player.fix();} }
+			return player;
+		}
 		String json = (String) getPlayers().get(uniqueId.toString());
 		if (json == null) {
 			return null;
@@ -52,11 +104,26 @@ public class KevsPermsManager {
 	}
 	
 	public void savePlayer(UUID uniqueId, KevsPermsPlayer player) {
+		if (getSql() != null) {
+			getSql().update("DELETE FROM kevspermissions_players WHERE uuid='" + uniqueId.toString() + "'");
+			getSql().update("INSERT INTO `kevspermissions_players` (`uuid`, `gson`) VALUES ('" + uniqueId + "', '" + new Gson().toJson(player) + "');");
+			return;
+		}
 		getPlayers().set(uniqueId.toString(), new Gson().toJson(player));
 		savePlayers();
 	}
 	
 	public KevsPermsGroup getGroup(String name) {
+		if (getSql() != null) {
+			ResultSet set = getSql().query("SELECT * FROM kevspermissions_groups WHERE groupname='" + name + "'");
+			KevsPermsGroup player = null;
+			try {
+				player = new Gson().fromJson(set.getString("gson"), KevsPermsGroup.class);
+				player.fix();
+				set.close();
+			} catch (JsonSyntaxException | SQLException e) { if (player == null) {player = new KevsPermsGroup(); player.fix();} }
+			return player;
+		}
 		String json = (String) getGroups().get(name);
 		if (json == null) {
 			return null;
@@ -71,6 +138,11 @@ public class KevsPermsManager {
 	}
 	
 	public void saveGroup(String name, KevsPermsGroup group) {
+		if (getSql() != null) {
+			getSql().update("DELETE FROM kevspermissions_groups WHERE groupname='" + name + "'");
+			getSql().update("INSERT INTO `kevspermissions_groups` (`groupname`, `gson`) VALUES ('" + name + "', '" + new Gson().toJson(group) + "');");
+			return;
+		}
 		if (group == null)
 			getGroups().set(name, null);
 		else
@@ -90,21 +162,21 @@ public class KevsPermsManager {
 	}
 	
 	public void saveGroups() {
-		File config = new File(plugin.getDataFolder(), "groups.yml");
+		File config = new File(plugin.getDataFolder(), "groups_json.yml");
 		try {
 			groups.save(config);
 		} catch (IOException e) {
-			System.out.println("Can't save File groups.yml");
+			System.out.println("Can't save File groups_json.yml");
 			e.printStackTrace();
 		}
 	}
 
 	public void savePlayers() {
-		File config = new File(plugin.getDataFolder(), "players.yml");
+		File config = new File(plugin.getDataFolder(), "players_json.yml");
 		try {
 			players.save(config);
 		} catch (IOException e) {
-			System.out.println("Can't save File players.yml");
+			System.out.println("Can't save File players_json.yml");
 			e.printStackTrace();
 		}
 	}
