@@ -2,13 +2,16 @@ package kev575.json;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 import kev575.permissions.KevsPermissions;
+
+import org.bukkit.Bukkit;
 
 public class KevsPermsPlayer {
 	private ArrayList<String> groups;
 	private HashMap<String, ArrayList<String>> permissions;
-	private String prefix, suffix;
+	private String prefix, suffix, lastname;
 	public String getPrefix() {
 		return prefix;
 	}
@@ -33,8 +36,11 @@ public class KevsPermsPlayer {
 	public void setPermissions(HashMap<String, ArrayList<String>> permissions) {
 		this.permissions = permissions;
 	}
+	public String getLastname() {
+		return lastname;
+	}
 	
-	public void fix() {
+	public void fix(UUID uniqueId) {
 		if (groups == null) {
 			ArrayList<String> str = new ArrayList<String>();
 			str.add(KevsPermissions.config.getConfig().getString("default"));
@@ -43,8 +49,9 @@ public class KevsPermsPlayer {
 		if (permissions == null)
 			permissions = new HashMap<String, ArrayList<String>>();
 		if (suffix == null)
-			suffix = "new-suffix";
+			suffix = "*";
 		if (prefix == null)
-			prefix = "new-prefix";
+			prefix = "*";
+		lastname = Bukkit.getOfflinePlayer(uniqueId).getName();
 	}
 }

@@ -11,9 +11,10 @@ import java.util.UUID;
 
 import kev575.json.KevsPermsGroup;
 import kev575.json.KevsPermsPlayer;
-import kev575.obf.PluginSetInPerms;
-import kev575.obf.PluginSetOutConfig;
+import kev575.obf.PluginSetPerms;
+import kev575.obf.PluginSetConfig;
 import kev575.sql.KevSQL;
+import me.clip.placeholderapi.external.EZPlaceholderHook;
 import net.milkbowl.vault.chat.Chat;
 
 import org.bukkit.Bukkit;
@@ -45,22 +46,21 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				config = new KevsPermsManager(this, new KevSQL(getConfig().getString("mysql.ip"), getConfig().getString("mysql.database"), getConfig().getString("mysql.username"), getConfig().getString("mysql.passwd"), getConfig().getInt("mysql.port")));				
 			} catch (Exception e) { config = new KevsPermsManager(this); }
 		}
-		if (config.getSql() == null) {
+		if (config == null || config.getSql() == null) {
 			config = new KevsPermsManager(this);
 		}
 		pre = "§6KevsPermission §8> §7";
-		PluginSetInPerms.a();
-		PluginSetOutConfig.a(getConfig());
-		PluginSetOutConfig.b(this);
+		PluginSetPerms.a();
+		PluginSetConfig.a(getConfig());
+		PluginSetConfig.b(this);
 		//pre = (config.getConfig().get("prefix") != "") ? config.getConfig().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
 		reloadAllPlayers();
 		if (config.getConfig().isBoolean("enablemanagers") && config.getConfig().getBoolean("enablemanagers") && config.getConfig().getBoolean("usevault")) {
 			setupProvider();
 		}
-		if (config.getConfig().isBoolean("enablemanagers") && config.getConfig().isBoolean("scoreboardmanager")) {
-			if (config.getConfig().getBoolean("enablemanagers")) {
-				Bukkit.getPluginManager().registerEvents(new ChatManager(), this);
+		if (config.getConfig().getBoolean("chatmanager"))
+			Bukkit.getPluginManager().registerEvents(new ChatManager(), this);
 //				if (config.getConfig().getBoolean("scoreboardmanager"))
 //				Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
 //					ScoreboardManager man = Bukkit.getScoreboardManager();
@@ -89,12 +89,38 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 //						}
 //					}
 //				}, 20, 20);
-			}
-		}
 		if (config.getGroup(config.getConfig().getString("default")) == null) {
 			KevsPermsGroup gr = new KevsPermsGroup();
 			gr.fix();
 			config.saveGroup(config.getConfig().getString("default"), gr);
+		}
+		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			new EZPlaceholderHook(this, "kevspermissions") {
+				@Override
+				public String onPlaceholderRequest(Player arg0, String arg1) {
+					if (arg1.equalsIgnoreCase("group")) {
+						return config.getPlayer(arg0.getUniqueId()).getGroups().get(0);
+					} else if (arg1.equalsIgnoreCase("prefix")) {
+						KevsPermsPlayer player = KevsPermissions.config.getPlayer(arg0.getUniqueId());
+						player.fix(arg0.getUniqueId());
+						if (player.getPrefix().equalsIgnoreCase("*")) {
+							player.setPrefix(KevsPermissions.config.getGroup(player.getGroups().get(0)).getPrefix());
+						}
+						return player.getPrefix();
+					} else if (arg1.equalsIgnoreCase("suffix")) {
+						KevsPermsPlayer player = KevsPermissions.config.getPlayer(arg0.getUniqueId());
+						player.fix(arg0.getUniqueId());
+						if (player.getSuffix().equalsIgnoreCase("*")) {
+							player.setSuffix(KevsPermissions.config.getGroup(player.getGroups().get(0)).getSuffix());
+						}
+						return player.getPrefix();
+					} else if (arg1.startsWith("hasperm-")) {
+						return arg0.hasPermission(arg1.split("-")[1]) ? "§atrue" : "§cfalse";
+					} else {
+						return "no-data";
+					}
+				}
+			}.hook();
 		}
 	}
 	
@@ -109,7 +135,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	        }
 		} catch (Exception e) {}
 	}
-
+	
 	@Override
 	public void onDisable() {
 		for (PermissionAttachment at : atts.values()) {
@@ -477,7 +503,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	public void join(final PlayerJoinEvent e) {
 		if (config.getPlayer(e.getPlayer().getUniqueId()) == null) {
 			KevsPermsPlayer p = new KevsPermsPlayer();
-			p.fix();
+			p.fix(e.getPlayer().getUniqueId());
 			config.savePlayer(e.getPlayer().getUniqueId(), p);
 		}
 		Thread t = new Thread(new Runnable() {
@@ -491,7 +517,9 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 				applyToAt(at, e.getPlayer().getUniqueId(), e.getPlayer().getWorld().getName(), null);
 				KevsPermsPlayer player = config.getPlayer(e.getPlayer().getUniqueId());
 				if (player.getGroups().size() == 0) {
-					player.setGroups((ArrayList<String>) Arrays.asList(config.getConfig().getString("default")));
+					ArrayList<String> list = new ArrayList<>();
+					list.add(config.getConfig().getString("default"));
+					player.setGroups(list);
 					config.savePlayer(e.getPlayer().getUniqueId(), player);
 				}
 				ArrayList<String> global = player.getPermissions().get("*");

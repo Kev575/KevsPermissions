@@ -3,7 +3,7 @@ package kev575.obf;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.Plugin;
 
-public class PluginSetOutConfig {
+public class PluginSetConfig {
 
 	public static void a(FileConfiguration arg0) {
 		/*if (arg0.get("default") == null) {

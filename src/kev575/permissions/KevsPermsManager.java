@@ -85,9 +85,9 @@ public class KevsPermsManager {
 			KevsPermsPlayer player = null;
 			try {
 				player = new Gson().fromJson(set.getString("gson"), KevsPermsPlayer.class);
-				player.fix();
+				player.fix(uniqueId);
 				set.close();
-			} catch (JsonSyntaxException | SQLException e) { if (player == null) {player = new KevsPermsPlayer(); player.fix();} }
+			} catch (JsonSyntaxException | SQLException e) { if (player == null) {player = new KevsPermsPlayer(); player.fix(uniqueId);} }
 			return player;
 		}
 		String json = (String) getPlayers().get(uniqueId.toString());
@@ -96,7 +96,7 @@ public class KevsPermsManager {
 		}
 		try {
 			KevsPermsPlayer player = new Gson().fromJson(json, KevsPermsPlayer.class);
-			player.fix();
+			player.fix(uniqueId);
 			return player;
 		} catch (JsonSyntaxException e) {
 			return null;
