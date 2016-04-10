@@ -1,6 +1,7 @@
 package kev575.permissions;
 
-import kev575.json.KevsPermsPlayer;
+import kev575.yaml.KevsPermsGroup;
+import kev575.yaml.KevsPermsPlayer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -11,24 +12,24 @@ public class ChatManager implements Listener {
 
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
-		if (KevsPermissions.config.getConfig().getBoolean("chatmanager")) {
+		if (KevsPermissions.manager.getPluginConfig().getBoolean("chatmanager")) {
 			if (e.getPlayer().hasPermission("kp.chatcolor")) {
 				e.setMessage(e.getMessage().replace("&", "§"));
 			}
 			e.setCancelled(true);
-			KevsPermsPlayer player = KevsPermissions.config.getPlayer(e.getPlayer().getUniqueId());
-			player.fix(e.getPlayer().getUniqueId());
-			if (player.getPrefix().equalsIgnoreCase("*")) {
-				player.setPrefix(KevsPermissions.config.getGroup(player.getGroups().get(0)).getPrefix());
+			KevsPermsPlayer player = new KevsPermsPlayer(KevsPermissions.manager.getPlayer(e.getPlayer().getUniqueId()));
+			String prefix = player.getPrefix(), suffix = player.getSuffix();
+			if (player.getPrefix().equalsIgnoreCase("*") && player.getGroups().size() >= 1) {
+				prefix = new KevsPermsGroup(KevsPermissions.manager.getGroup(player.getGroups().get(0))).getPrefix();
 			}
-			if (player.getSuffix().equalsIgnoreCase("*")) {
-				player.setSuffix(KevsPermissions.config.getGroup(player.getGroups().get(0)).getSuffix());
+			if (player.getSuffix().equalsIgnoreCase("*") && player.getGroups().size() >= 1) {
+				suffix = new KevsPermsGroup(KevsPermissions.manager.getGroup(player.getGroups().get(0))).getSuffix();
 			}
 			Bukkit.broadcastMessage(
-					KevsPermissions.config.getConfig().getString("chatman")
+					KevsPermissions.manager.getPluginConfig().getString("chatman")
 					.replace("%p", e.getPlayer().getName())
-					.replace("%x", player.getPrefix())
-					.replace("%s", player.getSuffix())
+					.replace("%x", prefix)
+					.replace("%s", suffix)
 					.replace("&", "§")
 					.replace("%m", e.getMessage()));
 		}

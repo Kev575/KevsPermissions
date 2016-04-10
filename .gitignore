@@ -4,3 +4,5 @@ bin/config.yml
 .classpath
 bin/plugin.yml
 *.prefs
+bin/groups.yml
+bin/players.yml

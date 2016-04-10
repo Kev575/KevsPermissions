@@ -1,7 +1,9 @@
 default: default
 chatmanager: false
 chatman: "&7%x%p&7%s&8: &7%m"
+tabmanager: false
 usevault: false
+antibuild: false
 mysql:
   enabled: false
   ip: "yourip.tld"
