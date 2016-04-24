@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import kev575.permissions.modules.KevsModule;
 import kev575.yaml.KevsPermsGroup;
 import kev575.yaml.KevsPermsPlayer;
 import net.milkbowl.vault.chat.Chat;
@@ -34,7 +35,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
-public class KevsPermissions extends JavaPlugin implements Listener {
+public class KevsPermissions extends KevsModule implements Listener {
 
 	public static PermissionsManager manager;
 	public String pre;
@@ -43,6 +44,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 	
 	@Override
 	public void onEnable() {
+		super.onEnable();
 		saveDefaultConfig();
 		/*if (getConfig().getBoolean("mysql.enabled")) {
 			try {
@@ -59,7 +61,6 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 		
 //		pre = (config.getConfig().get("prefix") != "") ? config.getConfig().getString("prefix") : pre;
 		Bukkit.getPluginManager().registerEvents(this, this);
-		reloadAllPlayers();
 		if (manager.getPluginConfig().isBoolean("enablemanagers") && manager.getPluginConfig().getBoolean("enablemanagers") && manager.getPluginConfig().getBoolean("usevault")) {
 			setupProvider();
 		}
@@ -98,6 +99,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 			new KevsPermsGroup(manager.getGroup(manager.getPluginConfig().getString("default"))).create();
 			manager.saveGroups();
 		}
+		reloadAllPlayers();
 		/*if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
 			new EZPlaceholderHook(this, "kevspermissions") {
 				@Override
@@ -228,6 +230,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 							+ "/kp insertgroup <Player> <Group> - set the 1. group of a player (overriden prefix)\n"
 							+ "Permissions?! Just use kp.<subcommand> for example: kp.setgroup and kp.insertgroup";
 					se.sendMessage(string.split("\n"));
+					se.sendMessage("§eInstalled Modules:");
+					ArrayList<KevsModule> modules = KevsModule.getModules();
+					for (KevsModule m : modules) {
+						se.sendMessage("§7  -" + m.getName() + " §7(" + m.getDescription().getAuthors().get(0) + "§7)");
+					}
 				} else if (args[0].equalsIgnoreCase("reload")) {
 					if (!se.hasPermission("kp.reload")) {
 						se.sendMessage(noPerm());
@@ -463,11 +470,11 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 					KevsPermsPlayer player = new KevsPermsPlayer(manager.getPlayer(uniqueId));
 					
 					List<String> perms = player.getPermissions();
-					if (perms.contains(args[2].split(":")[1])) {
-						perms.remove(args[2].split(":")[1]);
+					if (perms.contains(args[2])) {
+						perms.remove(args[2]);
 						se.sendMessage(pre + "§aRemoved permission §e" + args[2] + "§a from player §e" + args[1] + "§a!");
 					} else {
-						perms.add(args[2].split(":")[1]);
+						perms.add(args[2]);
 						se.sendMessage(pre + "§aAdded permission §e" + args[2] + "§a to player §e" + args[1] + "§a!");
 					}
 					
@@ -538,7 +545,7 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 			e.getPlayer().sendMessage(pre + "§7Setting up your permissions...");
 		}
 		
-		Bukkit.getScheduler().runTaskAsynchronously(this, new Runnable() {
+		Bukkit.getScheduler().runTask(this, new Runnable() {
 			@Override
 			public void run() {
 				if (atts.containsKey(e.getPlayer().getUniqueId())) {
@@ -586,6 +593,13 @@ public class KevsPermissions extends JavaPlugin implements Listener {
 							at.setPermission(permission, true);
 						}
 					}
+				}
+				if (e.getPlayer().hasPermission("kp.tabprefix")) {
+					String prefix = "";
+					if (player.getPrefix().equalsIgnoreCase("*") && player.getGroups().size() >= 1) {
+						prefix = new KevsPermsGroup(KevsPermissions.manager.getGroup(player.getGroups().get(0))).getPrefix();
+					}
+					e.getPlayer().setPlayerListName(prefix.replace("&", "§")+e.getPlayer().getName());
 				}
 				
 				if (manager.getPluginConfig().getBoolean("joinmessage")) {

@@ -60,7 +60,7 @@ public class PermissionsManager {
 	
 	public void savePlayers() {
 		try {
-			groups.save(new File(plugin.getDataFolder(), "players.yml"));
+			players.save(new File(plugin.getDataFolder(), "players.yml"));
 		} catch (IOException e) {}
 	}
 
@@ -85,7 +85,7 @@ public class PermissionsManager {
 	}
 	public boolean isAlphanumeric(String name) {
 		for (char c : name.toCharArray()) {
-			if (!Character.isAlphabetic(c) && c != '_' && c != '-' && !Character.isDigit(c)) {
+			if (!Character.isAlphabetic(c) && c != '_' && c != '.' && c != '-' && !Character.isDigit(c)) {
 				return false;
 			}
 		}
@@ -96,6 +96,6 @@ public class PermissionsManager {
 		players.createSection(uniqueId.toString());
 		KevsPermsPlayer player = new KevsPermsPlayer(getPlayer(uniqueId));
 		player.create();
-		saveGroups();
+		savePlayers();
 	}
 }

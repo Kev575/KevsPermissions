@@ -1,6 +1,6 @@
 package kev575.yaml;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import kev575.permissions.KevsPermissions;
@@ -22,14 +22,18 @@ public class KevsPermsPlayer extends YamlReader {
 		getSection().set("groups", groups);
 		saveConfig();
 	}
+	
 	public List<String> getGroups() {
-		return section.getStringList("groups");
+		return getSection().getStringList("groups");
 	}
 	
 	@Override
 	public void create() {
 		super.create();
-		setGroups(Arrays.asList("default"));
+		List<String> groups = new ArrayList<>();
+		groups.add("default");
+		setGroups(groups);
+		saveConfig();
 	}
 	
 }
