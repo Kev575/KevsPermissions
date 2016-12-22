@@ -15,7 +15,7 @@ public class VersionCommand extends PermissionsExecutor {
 	@Override
 	public void execute(CommandSender sender, String[] args) {
 		PluginDescriptionFile pdf = PermissionsPlugin.getInstance().getDescription();
-		sender.sendMessage(PermissionsConstants.PREFIX + " Version " + pdf.getVersion() + " created by " + pdf.getAuthors().get(0));
+		sender.sendMessage(PermissionsConstants.PREFIX + "Version " + pdf.getVersion() + " created by " + pdf.getAuthors().get(0));
 	}
 	
 	@Override

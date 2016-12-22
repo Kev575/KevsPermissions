@@ -19,6 +19,10 @@ public class PermissionsCommand implements CommandExecutor {
 	
 	static {
 		executors.add(new VersionCommand());
+		executors.add(new PlayersCommand());
+		executors.add(new GroupsCommand());
+		executors.add(new PlayerCommand());
+		executors.add(new GroupCommand());
 	}
 	
 	/**
@@ -39,6 +43,10 @@ public class PermissionsCommand implements CommandExecutor {
 				}
 				if (e == null) {
 					sender.sendMessage(PermissionsConstants.PREFIX + "§cSorry, but §e/" + alias + " " + args[0] + " §cdoes not exist.");
+					return true;
+				}
+				if (e.getPermission() != null && !sender.hasPermission(e.getPermission())) {
+					sender.sendMessage(PermissionsConstants.PREFIX + "§cSorry, but you do not have the permission for that.");
 					return true;
 				}
 				args = (String[]) ArrayUtils.removeElement(args, args[0]);

@@ -17,7 +17,6 @@ public abstract class PermissionsExecutor {
 	 * @param aliases the aliases, ignored if null
 	 */
 	public PermissionsExecutor(String subCommand, ArrayList<String> aliases) {
-		super();
 		this.subCommand = subCommand;
 		this.aliases = aliases;
 	}
