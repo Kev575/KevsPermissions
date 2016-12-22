@@ -1,0 +1,9 @@
+name: KevsPermissions
+version: 2.0
+main: kev575.permissions.PermissionsPlugin
+author: Kev575
+description: Maintain your servers permissions now - performant and lightweight!
+commands:
+  kp:
+    aliases: []
+    description: Base Command for KevsPermissions
