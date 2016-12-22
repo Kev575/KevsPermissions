@@ -1,6 +1,4 @@
+## Warning: I am currently recoding this resource. This branch (Version-Koala-(2.0)) is the current progress.  
+
 # KevsPermissions
 **SpigotMC Ressource:** https://www.spigotmc.org/resources/kevspermissions.16549/
-## Please consider the wiki for information: [Wiki](https://github.com/Kev575/KevsPermissions/wiki)
-  
-By downloading, using and / or editing the code you agree to this license: 
-https://github.com/Kev575/KevsPermissions/blob/master/LICENSE
