@@ -104,6 +104,22 @@ public final class PermissionsManager {
 	}
 	
 	/**
+	 * Delete a group from filesystem<br>
+	 * <b>undoable!</b> <i>if you have not been so clever to create a backup ;)</i> 
+	 * @return true if succeeded
+	 */
+	public static boolean deleteGroup(String name) {
+		if (!validateName(name))
+			return false;
+		File dir = new File(PermissionsPlugin.getInstance().getDataFolder(), "groups");
+		if (!dir.exists()) {
+			return false;
+		}
+		File group = new File(dir, name + ".yml");
+		return group.exists() && group.delete();
+	}
+	
+	/**
 	 * Check whether a name is valid   
 	 */
 	public static boolean validateName(String name) {
