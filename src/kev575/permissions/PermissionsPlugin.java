@@ -14,8 +14,9 @@ public class PermissionsPlugin extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		getCommand("kp").setExecutor(new PermissionsCommand());
+		getCommand("kp").setTabCompleter(new PermissionsCommand());
 		saveDefaultConfig();
-		PermissionsManager.createGroup("testgroup");
+		PermissionsManager.refresh();
 	}
 
 	public static PermissionsPlugin getInstance() {
