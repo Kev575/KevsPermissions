@@ -1,5 +1,7 @@
 package kev575.permissions.commands;
 
+import java.util.List;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.PluginDescriptionFile;
 
@@ -21,6 +23,12 @@ public class VersionCommand extends PermissionsExecutor {
 	@Override
 	public String getPermission() {
 		return "kp.version";
+	}
+
+	@Override
+	public List<String> tabComplete(CommandSender arg0, Object[] remove) {
+		// stays empty!
+		return null;
 	}
 
 }

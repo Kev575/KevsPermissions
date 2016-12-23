@@ -1,5 +1,7 @@
 package kev575.permissions.commands;
 
+import java.util.List;
+
 import org.bukkit.command.CommandSender;
 
 public class PlayerCommand extends PermissionsExecutor {
@@ -16,6 +18,12 @@ public class PlayerCommand extends PermissionsExecutor {
 	@Override
 	public String getPermission() {
 		return "kp.player";
+	}
+
+	@Override
+	public List<String> tabComplete(CommandSender arg0, Object[] remove) {
+		// TODO fill the method body
+		return null;
 	}
 
 }
