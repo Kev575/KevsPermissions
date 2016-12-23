@@ -21,8 +21,7 @@ public class GroupsCommand extends PermissionsExecutor {
 	}
 
 	@Override
-	public List<String> tabComplete(CommandSender arg0, Object[] remove) {
-		// TODO fill the method body
+	public List<String> tabComplete(CommandSender sender, String[] args) {
 		return null;
 	}
 

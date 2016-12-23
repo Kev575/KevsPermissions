@@ -82,7 +82,7 @@ public class PermissionsCommand implements CommandExecutor, TabCompleter {
 			} else if (args.length >= 2) {
 				for (PermissionsExecutor x : executors) {
 					if (arg0.hasPermission(x.getPermission())) {
-						return x.tabComplete(arg0, ArrayUtils.remove(args, 0));
+						return x.tabComplete(arg0, (String[]) ArrayUtils.remove(args, 0));
 					}
 				}
 			}

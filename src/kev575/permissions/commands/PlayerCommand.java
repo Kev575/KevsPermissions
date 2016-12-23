@@ -21,7 +21,7 @@ public class PlayerCommand extends PermissionsExecutor {
 	}
 
 	@Override
-	public List<String> tabComplete(CommandSender arg0, Object[] remove) {
+	public List<String> tabComplete(CommandSender sender, String[] args) {
 		// TODO fill the method body
 		return null;
 	}

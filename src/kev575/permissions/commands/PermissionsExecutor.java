@@ -34,5 +34,5 @@ public abstract class PermissionsExecutor {
 	
 	public abstract void execute(CommandSender sender, String[] args);
 	public abstract String getPermission();
-	public abstract List<String> tabComplete(CommandSender arg0, Object[] remove);
+	public abstract List<String> tabComplete(CommandSender sender, String[] args);
 }

@@ -26,7 +26,7 @@ public class VersionCommand extends PermissionsExecutor {
 	}
 
 	@Override
-	public List<String> tabComplete(CommandSender arg0, Object[] remove) {
+	public List<String> tabComplete(CommandSender sender, String[] args) {
 		// stays empty!
 		return null;
 	}
