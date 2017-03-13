@@ -16,6 +16,8 @@ public class PermissionsUtils {
 	 */
 	public static boolean setPermissible(Player p, PermissibleBase base) {
 		try {
+			Validate.notNull(p, "The player can not be null");
+			Validate.notNull(base, "The base can not be null");
 			Field field = p.getClass().getDeclaredField("perm");
 			field.setAccessible(true);
 			Field modifiersField = field.getClass().getDeclaredField("modifiers");
