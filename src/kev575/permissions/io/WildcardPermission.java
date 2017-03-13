@@ -11,6 +11,6 @@ public class WildcardPermission extends Permission {
 	
 	@Override
 	public String getDescription() {
-		return "The wildcard to every permission on the bukkit / spigot system.";
+		return "The wildcard grants every permission on the bukkit / spigot system.";
 	}
 }
